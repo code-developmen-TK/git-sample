@@ -1,0 +1,15 @@
+Sub statasber()
+
+
+
+    SysCmd acSysCmdInitMeter, "処理実行中です", 0
+    
+    For i = 1 To 20000
+        
+        SysCmd acSysCmdUpdateMeter, i
+         
+    Next i
+    
+    SysCmd acSysCmdRemoveMeter
+
+End Sub
