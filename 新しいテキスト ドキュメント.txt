@@ -1,17 +1,5 @@
-Sub statasber()
+Access ADO使用 パラメータ付き選択クエリの結果セットをRecordsetで返すサンプル
+https://kinaccco.hatenadiary.com/entry/2022/05/03/143451
 
-
-
-    SysCmd acSysCmdInitMeter, "処理実行中です", 0
-    
-    For i = 1 To 20000
-        
-        SysCmd acSysCmdUpdateMeter, i
-         
-    Next i
-    
-    SysCmd acSysCmdRemoveMeter
-
-End Sub
-
-https://code-developmen-tk.github.io/git-sample/
+Accessで「お待ちください」メッセージフォームを表示するサンプル
+https://kinaccco.hatenadiary.com/entry/2016/08/27/060000
