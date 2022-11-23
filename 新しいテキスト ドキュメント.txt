@@ -3,3 +3,31 @@ https://kinaccco.hatenadiary.com/entry/2022/05/03/143451
 
 Accessで「お待ちください」メッセージフォームを表示するサンプル
 https://kinaccco.hatenadiary.com/entry/2016/08/27/060000
+
+ファイルサイズが肥大化する問題　Oh, no... the file size grows steadily with every operation
+インポートを繰り返すと、いつの間にかaccdbのファイルサイズが大きくなり、2GB以上になると壊れてしまうことがあります。これ、残念ですがどちらもAccessの仕様です。酷い仕様ですが、テーブルを消してもデータ量は減らず、「データベースの最適化」を行って初めてゴミが消えるのです。
+
+最適化は（これもまた酷い仕様）Accessの処理上、空データベースにテーブルを全コピーして元テーブルを上書きする形になります。よって、VBAのコマンドでは実行できません。他ファイル（他のAccessやExcel VBA、Windos Script）からは実行可能です。若しくは、メニューから最適化するようにメッセージを出すか、閉じる時に最適化する設定にするしかありません。メニューからは「データベースツール」ー「データベースの最適化」、Accessのオプションからは「現在のデータベース」ー「閉じるときに最適化」です。
+
+ファイルサイズが大きくなってしまったら［最適化と修復］を実行
+https://hamachan.info/access2019-saitekika/
+
+
+DoCmd.TransferText TransferType:=acImportDelim, TableName:="Daily_KPI", _
+    FileName:="20180726_daily.csv", HasFieldNames:=True
+
+TransferType:=acImportDelim　→区切りテキストファイルのインポートを指定
+TableName:="Daily_KPI"　→インポート先のテーブル名を指定
+FileName:="20180726_daily.csv"　→インポート元のファイル名を指定
+HasFieldNames:=True　→CSV１行目に項目名が有る場合はTrueを指定
+
+
+【Excel・Access VBA】ADO入門｜DBへの接続とレコードセットの取得をわかりやすく解説
+https://www.depthbomb.net/?p=7602
+
+
+【VBA CSV出力】Openステートメント・FileSystemObject・Streamオブジェクト
+https://www.depthbomb.net/?p=4645
+
+【Excel・Access VBA】データベース接続用クラスで時短プログラミング
+https://www.depthbomb.net/?p=895
