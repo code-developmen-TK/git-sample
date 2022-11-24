@@ -1,0 +1,75 @@
+Sub CSV出力(ByVal sht As Worksheet, Optional ByVal rngStart As Range = Nothing)
+    Dim varFile As Variant
+    Dim FSO As New FileSystemObject
+    Dim TS As TextStream
+    Dim lngRowMin As Long, lngRowMax As Long
+    Dim lngColMin As Long, lngColMax As Long
+    Dim i As Long
+
+  
+    varFile = Application.GetSaveAsFilename(InitialFileName:=sht.Name & ".csv", _
+                                            FileFilter:="CSVファイル(*.csv),*.csv", _
+                                            FilterIndex:=1, _
+                                            Title:="保存ファイルの指定")
+    If varFile = False Then
+        Exit Sub
+    End If
+    
+    '開始行列、終了行列を取得
+    If rngStart Is Nothing Then
+        lngRowMin = 1
+        lngColMin = 1
+    Else
+        lngRowMin = rngStart.Row
+        lngColMin = rngStart.Column
+    End If
+    With rngStart.CurrentRegion
+        lngRowMax = .Item(.Count).Row
+        lngColMax = .Item(.Count).Column
+    End With
+  
+    Set TS = FSO.CreateTextFile(Filename:=varFile, Overwrite:=True)
+  
+    For i = lngRowMin To lngRowMax
+        TS.WriteLine CSV_EditRec(sht, i, lngColMin, lngColMax)
+    Next
+  
+    TS.Close
+    Set TS = Nothing
+    Set FSO = Nothing
+
+    MsgBox ("CSV出力しました。" & vbLf & vbLf & varFile)
+End Sub
+
+Private Function CSV_EditRec(ByVal sht As Worksheet, _
+                                i As Long, _
+                                lngColMin As Long, _
+                                lngColMax As Long) As String
+    Dim strRec As String
+    Dim strCol As String
+    Dim j As Long
+
+    strRec = ""
+    For j = lngColMin To lngColMax
+        Select Case True
+            Case IsNumeric(sht.Cells(i, j))
+                strCol = CStr(CDbl(sht.Cells(i, j)))
+            Case IsDate(sht.Cells(i, j))
+                If InStr(sht.Cells(i, j), "-") Then
+                    strCol = sht.Cells(i, j)
+                Else
+                    strCol = Format(sht.Cells(i, j), "yyyy/mm/dd")
+                End If
+            Case InStr(sht.Cells(i, j), ","), InStr(sht.Cells(i, j), """")
+                strCol = """" & sht.Cells(i, j) & """"
+            Case Else
+                strCol = sht.Cells(i, j)
+        End Select
+        If strRec = "" Then
+            strRec = strCol
+        Else
+            strRec = strRec & "," & strCol
+        End If
+    Next
+    CSV_EditRec = strRec
+End Function
