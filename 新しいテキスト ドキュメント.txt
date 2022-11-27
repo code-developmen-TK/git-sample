@@ -34,3 +34,9 @@ https://www.depthbomb.net/?p=895
 
 CSVの出力（書き出し）方法
 https://excel-ubara.com/excelvba5/EXCEL120.html
+
+第4話 DAOとADOの違い【連載】実務で使えるAccessのコツ
+https://www.r-staffing.co.jp/engineer/entry/20210806_1
+
+フォント
+Ricty Diminished
