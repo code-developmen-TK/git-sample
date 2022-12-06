@@ -43,3 +43,6 @@ Ricty Diminished
 
 中災防：製造業における職長の能力向上教育
 https://www.jisha.or.jp/shokucho-kojo/online/
+
+Electron入門 ~ Webの技術でつくるデスクトップアプリ
+https://zenn.dev/sprout2000/books/6f6a0bf2fd301c
