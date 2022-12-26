@@ -1,0 +1,85 @@
+Option Explicit
+ 
+Sub 実行()
+Dim this_year As Variant
+Dim next_year As Variant
+Dim first_day As Date
+Dim last_day As Date
+Dim today_date As Date
+Dim day_of_week As Integer
+Dim date_difference As Long
+Dim is_target_years As Boolean
+Dim i As Long
+Const TUESDAY As Integer = 3
+Const THURSDAY As Integer = 5
+
+
+
+
+last_day = DateValue(next_year & "/04/01")
+
+today_date = first_day
+
+date_difference = DateDiff("d", first_day, last_day)
+
+For i = 1 To date_difference
+
+    day_of_week = weekday(today_date)
+    
+    Select Case day_of_week
+    
+        Case TUESDAY
+        
+            Debug.Print today_date, WeekdayName(day_of_week)
+        
+        Case THURSDAY
+        
+            Debug.Print today_date, WeekdayName(day_of_week)
+        
+        Case Else
+        
+        
+    End Select
+ 
+    today_date = DateAdd("d", 1, today_date)
+
+Next
+
+End Sub
+
+Function InputYear() As Variant
+Dim this_year As Variant
+
+this_year = Application.InputBox("西暦を半角4桁の数字で入力してください。")
+    
+'キャンセル時の処理
+If VarType(this_year) = vbBoolean Then
+    MsgBox "キャンセルされました"
+    InputYear = "False"
+    Exit Function
+End If
+    
+'4桁でない場合の処理
+If Len(this_year) <> 4 Then
+    MsgBox ("西暦は4桁で入力してください。" _
+         & vbCrLf & "作業を中止します。")
+         InputYear = "False"
+    Exit Function
+End If
+    
+next_year = Str(Val(this_year) + 1)
+
+first_day = DateValue(this_year & "/04/01")
+
+is_target_years = firast_day <= "2022/4/1" Or firast_day >= "2050/03/31"
+
+If is_target_years Then
+
+    MsgBox "2022年から2050年までを入力して下さい。"
+    InputYear = "False"
+    Exit Function
+End If
+
+End Function
+
+
