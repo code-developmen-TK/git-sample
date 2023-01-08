@@ -54,3 +54,7 @@ https://www.youtube.com/watch?v=DVrlfdoiYzQ
 プロパティ設定シート
 https://www.accessnosusume.com/download/0101-007-001/
 
+
+【SQL学習入門】1回目:Accessで使えるSELECT文
+https://sys-daddy.com/select-statement-beginner-01/
+
