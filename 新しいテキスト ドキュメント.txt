@@ -61,5 +61,5 @@ https://sys-daddy.com/select-statement-beginner-01/
 サイトデベロッパーTK
 https://www.figma.com/team_invite/redeem/IxMOLsnrHFYSinwn1psY0E
 
-https://ateitexe.com/vba-ado-not-reference/
+VBAで参照設定をしないでADOを使ってAccessDBへ接続する
 https://ateitexe.com/vba-ado-not-reference/
