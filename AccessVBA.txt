@@ -1,0 +1,143 @@
+Option Compare Database
+
+
+Public Sub csvのインポート()
+Dim 所定のパス As String
+Dim FileName As String
+Dim ExistFlag As Boolean
+Dim ErrorMessage As String
+Dim DB As DAO.Database
+Dim rs As DAO.Recordset
+
+On Error GoTo 0
+
+所定のパス = "C:\～～～～～\～～～.csv"
+
+FileName = Dir(所定のパス)
+
+If InStr(1, FileName, ".") > 0 Then
+  
+  FileName = Left(FileName, InStrRev(FileName, ".") - 1)
+
+End If
+
+On Error Resume Next 'エラーが起きても、無視して、次の行から再開
+
+    DoCmd.RunSQL "DROP TABLE [" & FileName & "_インポート エラー]" '既存のインポートエラーのテーブルを削除
+
+On Error GoTo 0 'エラーが起きたら、VBAの標準のエラー処理
+
+    DoCmd.TransferText acImportDelim, , "temp", 所定のパス, True
+
+On Error Resume Next
+
+'インポートエラーのテーブルが生成されていたらExistFlagがTrue
+    ExistFlag = CurrentDb.TableDefs(FileName & "_インポート エラー").Name = FileName & "_インポート エラー"
+
+    If ExistFlag = True Then
+  
+        Set DB = CurrentDb()
+  
+        Set rs = DB.OpenRecordset(FileName & "_インポート エラー", dbOpenTable)
+  
+        ErrorMessage = "インポートでエラーが発生しました。処理を中断します。" + vbCrLf
+  
+        Do Until rs.EOF
+    
+            ErrorMessage = ErrorMessage & rs!行 & "行目のフィールド「" _
+            & rs!フィールド & "」で「" & rs!エラー & "」が発生" & vbCrLf
+    
+            rs.MoveNext
+  
+        Loop
+  
+        Set rs = Nothing
+  
+        Set DB = Nothing
+  
+        MsgBox ErrorMessage
+  
+        Exit Sub
+
+    End If
+
+On Error GoTo 0
+
+'インポートが成功した場合の続きの処理をここに書く
+(略)
+End Sub
+
+Public Function drop_import_error_table()
+'インポートエラーテーブルは必要ないから全消
+'https://qiita.com/waokitsune/items/1de358a6f0133ed57bb7
+    Dim tbl_ As DAO.TableDef
+    
+    For Each tbl_ In CurrentDb.TableDefs
+    
+        If tbl_.Name Like "*_インポート エラー*" Then
+        
+            DoCmd.DeleteObject acTable, tbl_.Name
+            
+        End If
+        
+    Next
+
+End Function
+
+
+
+Public Function ExistTable(tableName As String) As Boolean
+'----------------------------------------------------------------------------------
+'     関数名   : ExistTable
+'     処理内容 : テーブル存在チェック
+'     引  数　 : TableName
+'     戻り値　 : 結果
+'【Access】TableDefsでテーブル存在チェック
+'https://t-yumi.jp/gengo/access/201907200925541355.html
+' ----------------------------------------------------------------------------------
+On Error Resume Next
+
+    ExistTable = CurrentDb.TableDefs(tableName).Name = tableName
+    
+End Function
+
+
+Function FileSelect() As String
+'参照設定を使用せずにアクセスでファイル選択ダイアログを使うには
+'https://waq3-travelog.com/file-picker-dialog/
+
+Dim varTgtFleNM As Variant
+
+On Error GoTo ErrHNDL  'エラー処理を宣言します。エラーが生じたら ErrHNDL 部分へ飛びます。
+
+'ファイル参照用の設定値をセットします。
+'ファイルを選択する場合は、msofiledialogfilepicker →　3（定数）
+With Application.FileDialog(3)
+
+     'ダイアログタイトル名
+     .Title = "ファイルを選択してください"
+
+     'ファイルの種類を定義します。
+     .Filters.Add "HTML ファイル", "*.html"
+     .Filters.Add "HTMファイル", "*.htm"
+     .Filters.Add "すべてのファイル", "*.*"
+
+     '複数ファイル選択を可能にする場合はTrue、不可の場合はFalse。
+     .AllowMultiSelect = False
+
+     '最初に開くフォルダーを、当ファイルが存在しているフォルダーとします。
+     .InitialFileName = CurrentProject.Path & "\"
+
+     If .Show = -1 Then 'ファイルが選択されれば　-1 を返します。
+         For Each varTgtFleNM In .SelectedItems
+             FileSelect = varTgtFleNM
+         Next
+     End If
+End With
+Exit Function
+
+ErrHNDL:
+
+     MsgBox Err.Number & vbCrLf & Err.Description
+     Exit Function
+End Function

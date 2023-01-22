@@ -66,3 +66,7 @@ https://www.figma.com/team_invite/redeem/IxMOLsnrHFYSinwn1psY0E
 
 VBAで参照設定をしないでADOを使ってAccessDBへ接続する
 https://ateitexe.com/vba-ado-not-reference/
+
+
+第1話「イベント」を使いこなそう 【連載】実務で使えるAccessのコツ
+https://www.r-staffing.co.jp/engineer/entry/20210514_1
