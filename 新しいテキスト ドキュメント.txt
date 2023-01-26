@@ -74,3 +74,6 @@ https://www.r-staffing.co.jp/engineer/entry/20210514_1
 
 Destyle.css
 https://nicolas-cusan.github.io/destyle.css/
+
+Microsoft『Access』ファイル管理に役立つ、FileDialogオブジェクトで、特定フォルダを開いたり、ファイルのフルパスを抽出したりする方法を解説。
+https://affikan.com/2022/03/08/access_filedialog/
