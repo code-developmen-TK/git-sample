@@ -80,3 +80,6 @@ https://affikan.com/2022/03/08/access_filedialog/
 
 VBA:AccessのFileDialogを使用して[ファイルを開く]ダイアログボックスを表示するサンプルプログラム
 https://selifelog.com/blog-entry-247.html
+
+外部ファイルのテーブルを別の外部ファイルに転送
+https://hatenachips.blog.fc2.com/blog-entry-373.html
