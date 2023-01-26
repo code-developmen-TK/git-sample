@@ -141,3 +141,101 @@ ErrHNDL:
      MsgBox Err.Number & vbCrLf & Err.Description
      Exit Function
 End Function
+
+
+
+Public Function GetFileName() As String
+'**************************************************
+'ファイルを開くダイアログの例
+'Officeオブジェクトを使った"ファイル選択"ダイアログ
+'https://tsware.jp/tips/tips_221.htm
+'※下記方法を使うためには、VBEの[ツール]-[参照設定]メニューを実行し、「参照可能なライブラリファイル」一覧の"Microsoft Office10.0 Object Library"の項目にチェックを付けておく必要があります。
+'**************************************************
+  Dim intRet As Integer
+  
+  With Application.FileDialog(msoFileDialogOpen)
+    'ダイアログのタイトルを設定
+    .Title = "ファイルを開くダイアログの例"
+    'ファイルの種類を設定
+    .Filters.Clear
+    .Filters.Add "Microsoft Access データベース", "*.mdb"
+    .Filters.Add "Microsoft Access プロジェクト", "*.adp"
+    .Filters.Add "MDE ファイル", "*.mde"
+    .Filters.Add "すべてのファイル", "*.*"
+    'ファイルの種類の初期値を設定
+    .FilterIndex = 1
+    '複数ファイル選択を許可しない
+    .AllowMultiSelect = False
+    '初期パスを設定
+    .InitialFileName = CurrentProject.Path
+    'ダイアログを表示
+    intRet = .Show
+    If intRet <> 0 Then
+      'ファイルが選択されたとき
+      'そのフルバスを返り値に設定
+      GetFileName = Trim(.SelectedItems.Item(1))
+    Else
+      'ファイルが選択されなければ長さゼロの文字列を返す
+      GetFileName = ""
+    End If
+  End With
+
+End Function
+sub test()
+Dim strFileName As String
+
+'ファイルを開くダイアログを表示
+strFileName = GetFileName()
+
+'選択結果を評価
+If Len(strFileName) > 0 Then
+  MsgBox strFileName & "が選択されました！"
+Else
+  MsgBox "ファイルは選択されませんでした！"
+End If
+end sub
+
+
+------------------------------------------------------------------------------------------
+Function FileSelect() As String
+'************************************************************************
+'参照設定を使用せずにアクセスでファイル選択ダイアログを使うには
+'https://waq3-travelog.com/file-picker-dialog/
+'
+'
+'**************************************************************************
+Dim varTgtFleNM As Variant
+
+On Error GoTo ErrHNDL  'エラー処理を宣言します。エラーが生じたら ErrHNDL 部分へ飛びます。
+
+'ファイル参照用の設定値をセットします。
+'ファイルを選択する場合は、msofiledialogfilepicker →　3（定数）
+With Application.FileDialog(3)
+
+     'ダイアログタイトル名
+     .Title = "ファイルを選択してください"
+
+     'ファイルの種類を定義します。
+     .Filters.Add "HTML ファイル", "*.html"
+     .Filters.Add "HTMファイル", "*.htm"
+     .Filters.Add "すべてのファイル", "*.*"
+
+     '複数ファイル選択を可能にする場合はTrue、不可の場合はFalse。
+     .AllowMultiSelect = False
+
+     '最初に開くフォルダーを、当ファイルが存在しているフォルダーとします。
+     .InitialFileName = CurrentProject.Path & "\"
+
+     If .Show = -1 Then 'ファイルが選択されれば　-1 を返します。
+         For Each varTgtFleNM In .SelectedItems
+             FileSelect = varTgtFleNM
+         Next
+     End If
+End With
+Exit Function
+
+ErrHNDL:
+
+     MsgBox Err.Number & vbCrLf & Err.Description
+     Exit Function
+End Function

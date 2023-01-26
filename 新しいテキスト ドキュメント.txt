@@ -77,3 +77,6 @@ https://nicolas-cusan.github.io/destyle.css/
 
 Microsoft『Access』ファイル管理に役立つ、FileDialogオブジェクトで、特定フォルダを開いたり、ファイルのフルパスを抽出したりする方法を解説。
 https://affikan.com/2022/03/08/access_filedialog/
+
+VBA:AccessのFileDialogを使用して[ファイルを開く]ダイアログボックスを表示するサンプルプログラム
+https://selifelog.com/blog-entry-247.html
