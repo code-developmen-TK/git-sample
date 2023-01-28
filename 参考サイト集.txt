@@ -83,3 +83,9 @@ https://selifelog.com/blog-entry-247.html
 
 外部ファイルのテーブルを別の外部ファイルに転送
 https://hatenachips.blog.fc2.com/blog-entry-373.html
+
+【MS Access】新規フォーム作成時に設定すべき初心者向けプロパティ項目
+https://www.depthbomb.net/?p=2115
+
+【Excel・Access VBA】ADO入門｜DBへの接続とレコードセットの取得をわかりやすく解説
+https://www.depthbomb.net/?p=7602
