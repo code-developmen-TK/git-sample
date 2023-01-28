@@ -933,3 +933,218 @@ sr.SaveToFile "ファイルのフルパス", 2 '2:adSaveCreateOverWrite
 sr.Close 'Streamを閉じる
 
 Set sr = Nothing 'オブジェクトの解放
+********************************************************************************************************
+【Access】非連結フォームデータ検索・更新・追加・削除（VBA処理）
+https://pctips.jp/pc-soft/access-serach-vba-howto201907/
+
+Private Sub 商品名検索_AfterUpdate()
+
+Dim stCD As String
+Dim cn As New ADODB.Connection
+Dim rs As New ADODB.Recordset
+
+Set cn = CurrentProject.Connection
+rs.CursorLocation = adUseClient
+rs.Open "商品マスタ", cn, adOpenKeyset, adLockOptimistic
+
+rs.Filter = "商品名 Like '*" & Me!商品名検索 & "*'"
+
+Set Me.Recordset = rs
+If rs.EOF Then
+MsgBox ("条件に一致するデータは存在しませんでした。")
+With Me
+!call_ID = ""
+!call_商品名 = ""
+!call_分類 = ""
+!call_値段 = ""
+End With
+
+Else
+
+With Me
+!call_ID = rs!ID
+!call_商品名 = rs!商品名
+!call_分類 = rs!分類
+!call_値段 = rs!値段
+End With
+
+End If
+
+rs.Close: Set rs = Nothing
+cn.Close: Set cn = Nothing
+商品名検索 = Nul
+
+Me.Visible = False
+Me.Visible = True
+Me.商品名検索.SetFocus
+
+End Sub
+
+Private Sub btn_更新_Click()
+
+Dim cn As New ADODB.Connection
+Dim rs As New ADODB.Recordset
+Dim SQL As String
+
+On Error GoTo ErrRtn
+
+If IsNull(call_ID) Then
+MsgBox ("データが選択されていません。")
+Exit Sub
+End If
+
+If MsgBox("更新しますか？ yes/no", vbYesNo, "更新確認") = vbYes Then
+
+SQL = "SELECT * FROM 商品マスタ WHERE ID =" & Me!call_ID & ""
+
+Set cn = CurrentProject.Connection
+rs.Open SQL, cn, adOpenKeyset, adLockOptimistic
+
+cn.BeginTrans
+
+While Not rs.EOF
+
+rs!商品名 = call_商品名
+rs!分類 = call_分類
+rs!値段 = call_値段
+
+rs.Update
+rs.MoveNext
+Wend
+
+cn.CommitTrans
+
+rs.Close: Set rs = Nothing
+cn.Close: Set cn = Nothing
+
+Else
+MsgBox ("更新しませんでした。")
+Exit Sub
+
+End If
+
+ExitErrRtn:
+DoCmd.ShowAllRecords
+Exit Sub
+
+ErrRtn:
+MsgBox "エラー： " & Err.Description
+
+cn.RollbackTrans
+rs.Close: Set rs = Nothing
+cn.Close: Set cn = Nothing
+
+End Sub
+
+Private Sub btn_追加_Click()
+
+Dim cn As New ADODB.Connection
+Dim rs As New ADODB.Recordset
+
+If IsNull(call_商品名) Then
+MsgBox ("商品名が入力されていません。")
+Exit Sub
+End If
+
+If IsNull(call_分類) Then
+MsgBox ("分類が入力されていません。")
+Exit Sub
+End If
+
+If MsgBox("追加しますか？ yes/no", vbYesNo, "データ追加確認") = vbYes Then
+
+On Error GoTo ErrRtn
+
+Set cn = CurrentProject.Connection
+Set rs = New ADODB.Recordset
+rs.Open "商品マスタ", cn, adOpenKeyset, adLockOptimistic
+
+' トランザクションの開始
+cn.BeginTrans
+
+rs.AddNew
+
+rs!商品名 = call_商品名
+rs!分類 = call_分類
+rs!値段 = call_値段
+
+rs.Update
+MsgBox ("追加しました。")
+
+' トランザクションの保存
+cn.CommitTrans
+
+rs.Close: Set rs = Nothing
+cn.Close: Set cn = Nothing
+
+Else
+
+MsgBox ("追加しませんでした。")
+Exit Sub
+
+End If
+
+ExitErrRtn:
+call_ID = Null
+call_商品名 = Null
+call_分類 = Null
+call_値段 = Null
+
+Exit Sub
+
+ErrRtn:
+MsgBox "エラー： " & Err.Description
+'BeginTransの時点まで戻り、変更をキャンセルする
+
+cn.RollbackTrans
+rs.Close: Set rs = Nothing
+cn.Close: Set cn = Nothing
+
+End Sub
+
+Private Sub btn_削除_Click()
+
+Dim CN As ADODB.Connection
+Dim RS As ADODB.Recordset
+
+On Error GoTo ErrRtn
+
+If MsgBox("実行しますか？ yes/no", vbYesNo, "削除確認") = vbYes Then
+
+Set CN = CurrentProject.Connection
+Set RS = New ADODB.Recordset
+
+CN.BeginTrans
+
+RS.Open "商品マスタ", CN, adOpenStatic, adLockOptimistic
+
+' Debug.Print Me.call_ID
+
+RS.Find "ID = " & call_ID
+
+RS.Delete
+
+CN.CommitTrans
+
+RS.Close: Set RS = Nothing
+CN.Close: Set CN = Nothing
+
+Else
+
+MsgBox "削除しませんでした。"
+
+Exit Sub
+End If
+
+ExitErrRtn:
+
+DoCmd.ShowAllRecords
+Exit Sub
+
+ErrRtn:
+MsgBox "エラー： " & Err.Description
+CN.RollbackTrans
+RS.Close: Set RS = Nothing
+CN.Close: Set CN = Nothing
+
+End Sub

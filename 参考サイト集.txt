@@ -89,3 +89,6 @@ https://www.depthbomb.net/?p=2115
 
 【Excel・Access VBA】ADO入門｜DBへの接続とレコードセットの取得をわかりやすく解説
 https://www.depthbomb.net/?p=7602
+
+【Access】非連結フォームデータ検索・更新・追加・削除（VBA処理）
+https://pctips.jp/pc-soft/access-serach-vba-howto201907/
