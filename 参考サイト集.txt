@@ -92,3 +92,7 @@ https://www.depthbomb.net/?p=7602
 
 【Access】非連結フォームデータ検索・更新・追加・削除（VBA処理）
 https://pctips.jp/pc-soft/access-serach-vba-howto201907/
+
+
+業務効率の改善をAccessで実践！！
+https://www.latest-info-system.com/
