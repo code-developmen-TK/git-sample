@@ -1186,7 +1186,6 @@ myErr:
     MsgBox Err.Description
 End Sub
 **********************************************************************
-
 '---------------------------------------------------------------------------
 'Access帳票開発でレポート、クエリとかを複数人で触るための手順。
 'https://nameuntitled.hatenablog.com/entry/2016/08/26/185144
@@ -1286,4 +1285,6 @@ For Each myFile In folder.Files
     End If
 
 Next
+End Sub
+
 
