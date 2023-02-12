@@ -1186,3 +1186,91 @@ myErr:
     MsgBox Err.Description
 End Sub
 **********************************************************************
+
+
+'---------------------------------------------------------------------------
+'Access帳票開発でレポート、クエリとかを複数人で触るための手順。
+'https://nameuntitled.hatenablog.com/entry/2016/08/26/185144
+'---------------------------------------------------------------------------------
+'Export
+Public Sub ExportModules()
+Dim outputDir As String
+Dim currentDat As Object
+Dim currentProj As Object
+
+outputDir = GetDir(CurrentDb.Name)
+Set currentDat = Application.CurrentData
+Set currentProj = Application.CurrentProject
+ExportObjectType acQuery, currentDat.AllQueries, outputDir, ".qry"
+ExportObjectType acForm, currentProj.AllForms, outputDir, ".frm"
+ExportObjectType acReport, currentProj.AllReports, outputDir, ".rpt"
+ExportObjectType acMacro, currentProj.AllMacros, outputDir, ".mcr"
+ExportObjectType acModule, currentProj.AllModules, outputDir, ".bas"
+End Sub
+
+'ファイル名のディレクトリ部分を返す
+Private Function GetDir(FileName As String) As String
+Dim p As Integer
+
+GetDir = FileName
+p = InStrRev(FileName, "\")
+If p > 0 Then GetDir = Left(FileName, p - 1)
+End Function
+
+'特定の種類のオブジェクトをエクスポートする
+Private Sub ExportObjectType(ObjType As Integer, _
+ObjCollection As Variant, Path As String, Ext As String)
+
+Dim obj As Variant
+Dim filePath As String
+
+For Each obj In ObjCollection
+filePath = Path & "\dbObj\" & obj.Name & Ext
+SaveAsText ObjType, obj.Name, filePath
+Debug.Print "Save " & obj.Name
+Next
+End Sub
+
+'import objects
+Public Sub ImportModules()
+Dim inputDir As String
+Dim currentDat As Object
+Dim currentProj As Object
+
+inputDir = GetDir(CurrentDb.Name) & "\dbObj\"
+Set currentDat = Application.CurrentData
+Set currentProj = Application.CurrentProject
+ImportObjectType (inputDir)
+End Sub
+
+'import all objects in a folder
+Private Sub ImportObjectType(Path As String)
+
+Dim currentDat As Object
+Dim currentProj As Object
+
+Dim fso
+Set fso = CreateObject("Scripting.FileSystemObject")
+Dim folder As Object
+Dim myFile, objectname, objecttype
+Set folder = CreateObject _
+("Scripting.FileSystemObject").GetFolder(Path)
+Dim oApplication
+
+For Each myFile In folder.Files
+objecttype = fso.GetExtensionName(myFile.Name)
+objectname = fso.GetBaseName(myFile.Name)
+
+If (objecttype = "frm") Then
+Application.LoadFromText acForm, objectname, myFile.Path
+ElseIf (objecttype = "bas") Then
+Application.LoadFromText acModule, objectname, myFile.Path
+ElseIf (objecttype = "mcr") Then
+Application.LoadFromText acMacro, objectname, myFile.Path
+ElseIf (objecttype = "rpt") Then
+Application.LoadFromText acReport, objectname, myFile.Path
+ElseIf (objecttype = "qry") Then
+Application.LoadFromText acQuery, objectname, myFile.Path
+End If
+Next
+
