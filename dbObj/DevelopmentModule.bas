@@ -1,59 +1,285 @@
 Option Compare Database
 Option Explicit
 
-Public Sub ExportModules()
+'Public Sub ExportModules()
 '****************************************************
 'https://paz3.hatenablog.jp/entry/20120114/1326536022
 'Access VBAでオブジェクトをエクスポートするコード
 '****************************************************
 '現在のMDBのオブジェクトをエクスポートする
-    Dim outputDir As String
-    Dim currentDat As Object
-    Dim currentProj As Object
+'    Dim outputDir As String
+'    Dim currentDat As Object
+'    Dim currentProj As Object
     
-    outputDir = GetDir(CurrentDb.Name)
+'    outputDir = GetDir(CurrentDb.Name)
     
-    Set currentDat = Application.CurrentData
+'    Set currentDat = Application.CurrentData
     
-    Set currentProj = Application.CurrentProject
+'    Set currentProj = Application.CurrentProject
     
-    ExportObjectType acQuery, currentDat.AllQueries, outputDir, ".qry"
-    ExportObjectType acForm, currentProj.AllForms, outputDir, ".frm"
-    ExportObjectType acReport, currentProj.AllReports, outputDir, ".rpt"
-    ExportObjectType acMacro, currentProj.AllMacros, outputDir, ".mcr"
-    ExportObjectType acModule, currentProj.AllModules, outputDir, ".mdl"
+'    ExportObjectType acQuery, currentDat.AllQueries, outputDir, ".qry"
+'    ExportObjectType acForm, currentProj.AllForms, outputDir, ".frm"
+'    ExportObjectType acReport, currentProj.AllReports, outputDir, ".rpt"
+ '   ExportObjectType acMacro, currentProj.AllMacros, outputDir, ".mcr"
+'    ExportObjectType acModule, currentProj.AllModules, outputDir, ".mdl"
     
-End Sub
+'End Sub
 
 'ファイル名のディレクトリ部分を返す
-Private Function GetDir(FileName As String) As String
-    Dim p As Integer
+'Private Function GetDir(FileName As String) As String
+'    Dim p As Integer
     
-    GetDir = FileName
+'    GetDir = FileName
     
-    p = InStrRev(FileName, "\")
+'    p = InStrRev(FileName, "\")
     
-    If p > 0 Then GetDir = Left(FileName, p - 1)
+'    If p > 0 Then GetDir = Left(FileName, p - 1)
+    
+'End Function
+
+'特定の種類のオブジェクトをエクスポートする
+'Private Sub ExportObjectType(ObjType As Integer, _
+'        ObjCollection As Variant, Path As String, Ext As String)
+    
+'    Dim obj As Variant
+'    Dim filePath As String
+    
+'    For Each obj In ObjCollection
+    
+'        filePath = Path & "\" & obj.Name & Ext
+        
+'        SaveAsText ObjType, obj.Name, filePath
+        
+   '     Debug.Print "Save " & obj.Name
+'    Next
+    
+'End Sub
+'エクスポート
+Public Function ExportDBObjects() As Boolean
+On Error GoTo Err_ExportDBObjects
+    
+    Dim rtnText As String '入力ボックスの戻り値
+    
+'    rtnText = InputBox("エクスポートを開始します。", "DB名を入力", ".accdb")
+    rtnText = "テストデータシステム.accdb"
+    
+    If rtnText = "" Then
+        ExportDBObjects = True
+        Exit Function
+    End If
+    
+    'エクスポート処理を行う。
+    If Not ExportDBObjectsDtl("modules", rtnText) Then
+        
+        MsgBox "え？失敗？？", vbInformation
+        
+        ExportDBObjects = False
+        Exit Function
+    End If
+    
+    MsgBox "出力されました。", vbInformation
+    
+    ExportDBObjects = True
+    
+Exit_ExportDBObjects:
+    Exit Function
+    
+Err_ExportDBObjects:
+    MsgBox Err.Number & " - " & Err.Description
+    ExportDBObjects = False
+    Resume Exit_ExportDBObjects
     
 End Function
 
-'特定の種類のオブジェクトをエクスポートする
-Private Sub ExportObjectType(ObjType As Integer, _
-        ObjCollection As Variant, Path As String, Ext As String)
+'エクスポート詳細
+Public Function ExportDBObjectsDtl(expDir As String, inputDbName As String) As Boolean
+'MS Accessのmodulesをソース管理する方法１
+'https://osaca-z4.hatenadiary.org/entry/20100201/1265035288
+
+'On Error GoTo Err_ExportDBObjectsDtl
+
+
+    Dim db As dao.Database
+    Dim rc As Long
+    Dim td As TableDef
+    Dim d As Document
+    Dim c As Container
+    Dim i As Integer
+    Dim sExportLocation As String
+    Dim appAccess As Access.Application
+    Dim dbName As String
     
-    Dim obj As Variant
-    Dim filePath As String
+    '対象のDB名称をセット
+    dbName = CurrentProject.Path & "\" & inputDbName
     
-    For Each obj In ObjCollection
+    DoCmd.SetWarnings False
+    ' データベースを Access ウィンドウで開きます。
+    Set appAccess = CreateObject("Access.Application")
+    appAccess.OpenCurrentDatabase dbName
+    appAccess.Visible = False
+    DoCmd.SetWarnings True
     
-        filePath = Path & "\" & obj.Name & Ext
+    Set db = DBEngine.Workspaces(0).OpenDatabase(dbName)
+    
+    sExportLocation = CurrentProject.Path & "\" & expDir & "\" '最後にバックスラッシュが必要
+    'フォルダ作成
+    rc = SHCreateDirectoryEx(0&, sExportLocation & "tbl", 0&)
+    rc = SHCreateDirectoryEx(0&, sExportLocation & "frm", 0&)
+    rc = SHCreateDirectoryEx(0&, sExportLocation & "rpt", 0&)
+    rc = SHCreateDirectoryEx(0&, sExportLocation & "mcr", 0&)
+    rc = SHCreateDirectoryEx(0&, sExportLocation & "bas", 0&)
+    rc = SHCreateDirectoryEx(0&, sExportLocation & "qry", 0&)
+    
+    'フォーム
+    Set c = db.Containers("Forms")
+    For Each d In c.Documents
+        appAccess.Application.SaveAsText acForm, d.Name, sExportLocation & "frm\Form_" & d.Name & ".frm"
+    Next d
+    
+    'レポート
+    Set c = db.Containers("Reports")
+    For Each d In c.Documents
+        appAccess.Application.SaveAsText acReport, d.Name, sExportLocation & "rpt\Report_" & d.Name & ".rpt"
+    Next d
+    
+    'マクロ
+    Set c = db.Containers("Scripts")
+    For Each d In c.Documents
+        appAccess.Application.SaveAsText acMacro, d.Name, sExportLocation & "mcr\Macro_" & d.Name & ".mcr"
+    Next d
+    
+    '標準モジュール
+    Set c = db.Containers("Modules")
+    For Each d In c.Documents
+        appAccess.Application.SaveAsText acModule, d.Name, sExportLocation & "bas\Module_" & d.Name & ".bas"
+    Next d
+    
+    'クエリ
+    For i = 0 To db.QueryDefs.Count - 1
+        'ファイル名の先頭が"~"で始まるクエリは無視する
+        If Left(db.QueryDefs(i).Name, 1) <> "~" Then
+            appAccess.Application.SaveAsText acQuery, db.QueryDefs(i).Name, sExportLocation & "qry\Query_" & db.QueryDefs(i).Name & ".sql"
+        End If
+    Next i
+    
+    ExportDBObjectsDtl = True
+    
+Exit_ExportDBObjectsDtl:
+    Set db = Nothing
+    Set c = Nothing
+    appAccess.CloseCurrentDatabase
+    Set appAccess = Nothing
+    Exit Function
+    
+Err_ExportDBObjectsDtl:
+    MsgBox Err.Number & " - " & Err.Description
+    ExportDBObjectsDtl = False
+    Resume Exit_ExportDBObjectsDtl
+    
+End Function
+
+'インポート
+Public Function ImportDBObjects() As Boolean
+'MS Accessのmodulesをソース管理する方法２
+'https://osaca-z4.hatenadiary.org/entry/20100202/1265121443
+
+On Error GoTo Err_ImportDBObjects
+    
+    Dim fso As FileSystemObject
+    Dim f, g, cnt As Long
+    Dim appAccess As Access.Application
+    Dim rtnText As String '入力ボックスの戻り値
+    Dim dbName As String
+    Dim rc As Long
+    
+    rtnText = InputBox("インポートを開始します。", "DB名を入力", ".mdb")
+    
+    '入力されなければ処理をしない
+    If rtnText = "" Then
+        ImportDBObjects = True
+        Exit Function
+    End If
+    
+    'バックアップフォルダ作成
+    rc = SHCreateDirectoryEx(0&, sExportLocation & "backup", 0&)
+    
+    'バックアップ処理
+    If Not ExportDBObjectsDtl("backup", rtnText) Then
+        ImportDBObjects = False
+        MsgBox "バックアップ失敗…"
+        Exit Function
+    End If
         
-        SaveAsText ObjType, obj.Name, filePath
+    '対象のDB名称をセット
+    dbName = CurrentProject.Path & "\" & rtnText
         
-   '     Debug.Print "Save " & obj.Name
-    Next
+    ' データベースを Access ウィンドウで開きます。
+    Set appAccess = CreateObject("Access.Application")
+    appAccess.OpenCurrentDatabase dbName
+    appAccess.Visible = False
     
-End Sub
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    For Each f In fso.GetFolder(CurrentProject.Path & "\modules\").SubFolders
+        cnt = cnt + 1
+        
+        'フォーム
+        If fso.GetFolder(f).Name = "frm" Then
+            For Each g In fso.GetFolder(f).Files
+                appAccess.Application.LoadFromText acForm, Replace(fso.GetBaseName(g.Name), "Form_", ""), g.Path
+            Next g
+        End If
+        
+        'レポート
+        If fso.GetFolder(f).Name = "rpt" Then
+            For Each g In fso.GetFolder(f).Files
+                appAccess.Application.LoadFromText acReport, Replace(fso.GetBaseName(g.Name), "Report_", ""), g.Path
+            Next g
+        End If
+        
+        'マクロ
+        If fso.GetFolder(f).Name = "mcr" Then
+            For Each g In fso.GetFolder(f).Files
+                appAccess.Application.LoadFromText acMacro, Replace(fso.GetBaseName(g.Name), "Macro_", ""), g.Path
+            Next g
+        End If
+        
+        '標準モジュール
+        If fso.GetFolder(f).Name = "bas" Then
+            For Each g In fso.GetFolder(f).Files
+                appAccess.Application.LoadFromText acModule, Replace(fso.GetBaseName(g.Name), "Module_", ""), g.Path
+            Next g
+        End If
+        
+        'クエリ
+        If fso.GetFolder(f).Name = "qry" Then
+            For Each g In fso.GetFolder(f).Files
+                appAccess.Application.LoadFromText acQuery, Replace(fso.GetBaseName(g.Name), "Query_", ""), g.Path
+            Next g
+        End If
+    Next f
+    
+    '最適化を実行(自動でやりたいけど、うまく動作しない…のでコメントアウト)
+    'appAccess.Application.CommandBars.FindControl(id:=2071).accDoDefaultAction
+    
+    'メッセージ
+    MsgBox "おわり…最適化を実行してください。", vbInformation
+    
+    ImportDBObjects = True
+    
+Exit_ImportDBObjectsDtl:
+    '後処理
+    Set fso = Nothing
+    appAccess.CloseCurrentDatabase
+    Set appAccess = Nothing
+    Exit Function
+    
+Err_ImportDBObjects:
+    MsgBox Err.Number & " - " & Err.Description
+    ImportDBObjects = False
+    Resume Exit_ImportDBObjectsDtl
+    
+End Function
+
 
 Function text_file_read_write()
 '***********************************************************
@@ -409,8 +635,8 @@ Dim INITIAL_PATH As String
 Dim FileName As String
 Dim ExistFlag As Boolean
 Dim ErrorMessage As String
-Dim DB As DAO.Database
-Dim RS As DAO.Recordset
+Dim db As dao.Database
+Dim RS As dao.Recordset
 
 On Error GoTo 0
 
@@ -439,9 +665,9 @@ On Error Resume Next
 
     If ExistFlag = True Then
   
-        Set DB = CurrentDb()
+        Set db = CurrentDb()
   
-        Set RS = DB.OpenRecordset(FileName & "_インポート エラー", dbOpenTable)
+        Set RS = db.OpenRecordset(FileName & "_インポート エラー", dbOpenTable)
   
         ErrorMessage = "インポートでエラーが発生しました。処理を中断します。" + vbCrLf
   
@@ -456,7 +682,7 @@ On Error Resume Next
   
         Set RS = Nothing
   
-        Set DB = Nothing
+        Set db = Nothing
   
         MsgBox ErrorMessage
   
@@ -519,9 +745,9 @@ con.Execute "CREATE UNIQUE INDEX [Combined Index] ON [~~Kitsch'n Sync]([ShortTex
 Set con = Nothing
     
 'Add a Hyperlink Field
-Dim AllDefs As DAO.TableDefs
-Dim TblDef As DAO.TableDef
-Dim Fld As DAO.Field
+Dim AllDefs As dao.TableDefs
+Dim TblDef As dao.TableDef
+Dim Fld As dao.Field
 
 Set AllDefs = Application.CurrentDb.TableDefs
 Set TblDef = AllDefs("~~Kitsch'n Sync")
@@ -535,3 +761,106 @@ TblDef.Fields.Append Fld
 DoCmd.RunSQL "ALTER TABLE [~~Kitsch'n Sync] DROP COLUMN [PlaceHolder1];"
 
 End Sub
+
+Option Compare Database
+
+Option Explicit
+'---------------------------------------------------------------------------
+'Access帳票開発でレポート、クエリとかを複数人で触るための手順。
+'https://nameuntitled.hatenablog.com/entry/2016/08/26/185144
+'---------------------------------------------------------------------------------
+'Export
+Public Sub ExportModules()
+Dim outputDir As String
+Dim currentDat As Object
+Dim currentProj As Object
+
+outputDir = GetDir(CurrentDb.Name)
+
+Set currentDat = Application.CurrentData
+Set currentProj = Application.CurrentProject
+
+ExportObjectType acQuery, currentDat.AllQueries, outputDir, ".qry"
+ExportObjectType acForm, currentProj.AllForms, outputDir, ".frm"
+ExportObjectType acReport, currentProj.AllReports, outputDir, ".rpt"
+ExportObjectType acMacro, currentProj.AllMacros, outputDir, ".mcr"
+ExportObjectType acModule, currentProj.AllModules, outputDir, ".bas"
+
+End Sub
+
+'ファイル名のディレクトリ部分を返す
+Private Function GetDir(FileName As String) As String
+Dim p As Integer
+
+GetDir = FileName
+
+p = InStrRev(FileName, "\")
+
+If p > 0 Then GetDir = Left(FileName, p - 1)
+
+End Function
+
+'特定の種類のオブジェクトをエクスポートする
+Private Sub ExportObjectType(ObjType As Integer, _
+ObjCollection As Variant, Path As String, Ext As String)
+
+Dim obj As Variant
+Dim filePath As String
+
+For Each obj In ObjCollection
+    filePath = Path & "\dbObj\" & obj.Name & Ext
+    SaveAsText ObjType, obj.Name, filePath
+    Debug.Print "Save " & obj.Name
+Next
+
+End Sub
+
+'import objects
+Public Sub ImportModules()
+Dim inputDir As String
+Dim currentDat As Object
+Dim currentProj As Object
+
+inputDir = GetDir(CurrentDb.Name) & "\dbObj\"
+
+Set currentDat = Application.CurrentData
+Set currentProj = Application.CurrentProject
+
+ImportObjectType (inputDir)
+
+End Sub
+
+'import all objects in a folder
+Private Sub ImportObjectType(Path As String)
+
+Dim currentDat As Object
+Dim currentProj As Object
+
+Dim fso
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+Dim folder As Object
+Dim myFile, objectname, objecttype
+
+Set folder = CreateObject _
+("Scripting.FileSystemObject").GetFolder(Path)
+
+Dim oApplication
+
+For Each myFile In folder.Files
+    objecttype = fso.GetExtensionName(myFile.Name)
+    objectname = fso.GetBaseName(myFile.Name)
+
+    If (objecttype = "frm") Then
+        Application.LoadFromText acForm, objectname, myFile.Path
+    ElseIf (objecttype = "bas") Then
+        Application.LoadFromText acModule, objectname, myFile.Path
+    ElseIf (objecttype = "mcr") Then
+        Application.LoadFromText acMacro, objectname, myFile.Path
+    ElseIf (objecttype = "rpt") Then
+        Application.LoadFromText acReport, objectname, myFile.Path
+    ElseIf (objecttype = "qry") Then
+        Application.LoadFromText acQuery, objectname, myFile.Path
+    End If
+
+Next

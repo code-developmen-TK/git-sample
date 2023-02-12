@@ -45,3 +45,11 @@ ErrHNDL:
      Exit Function
      
 End Function
+
+Sub export()
+Dim frag As Boolean
+
+frag = ExportDBObjects()
+Debug.Print frag
+
+End Sub
