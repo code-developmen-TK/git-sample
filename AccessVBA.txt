@@ -1148,3 +1148,41 @@ RS.Close: Set RS = Nothing
 CN.Close: Set CN = Nothing
 
 End Sub
+
+************************************************************************
+'テキストファイルのデータをインポートする
+'https://www.moug.net/tech/acvba/0090030.html
+'TransferTextExportSampleを実行してから実行
+Sub TransferTextImportSample()
+    'エラーの場合、myErr:　へ
+    On Error GoTo myErr
+    '「C:\出力顧客テーブル.txt」のデータを
+    '［取込顧客テーブル］を作成して取り込む
+    DoCmd.TransferText acImportDelim, , "取込顧客テーブル" _
+            , "C:\出力顧客テーブル.txt"
+    MsgBox "「出力顧客テーブル.txt」を［取込顧客テーブル］として" _
+           & "取り込みました"
+    'プロシージャを終了
+    Exit Sub
+myErr:
+    MsgBox "サンプルTransferTextImportSampleの実行前に、" _
+        & "TransferTextExportSampleを実行し、" _
+        & "「C:\出力顧客テーブル.txt」を作成して下さい。"
+End Sub
+*************************************************************************
+'データをテキストファイルにエクスポートする
+'https://www.moug.net/tech/acvba/0090029.html
+Sub TransferTextExportSample()
+    'エラーの場合、myErr:　へ
+    On Error GoTo myErr
+    '［顧客テーブル］のデータを、「C:\出力顧客テーブル.txt」に出力
+    DoCmd.TransferText acExportDelim, , "顧客テーブル", "C:\出力顧客テーブル.
+txt"
+    MsgBox "［顧客テーブル］を「出力顧客テーブル.txt」に書き出しました"
+     'プロシージャを終了
+    Exit Sub                
+myErr:
+    'エラーメッセージを出す
+    MsgBox Err.Description
+End Sub
+**********************************************************************

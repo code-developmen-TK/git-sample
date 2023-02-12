@@ -1,0 +1,174 @@
+Option Explicit
+
+Sub ボタン1_Click()
+Dim shtWorkSheet As Worksheet
+Dim rngRange As Range
+
+Set shtWorkSheet = Worksheets("Sheet2")
+Set rngRange = shtWorkSheet.Range("A2")
+
+Call CSV出力(shtWorkSheet, rngRange)
+
+End Sub
+
+Sub 実行()
+
+
+End Sub
+
+Sub CSV出力(ByVal wksheet As Worksheet, Optional ByVal rngStart As Range = Nothing)
+'***********************************************************************
+'エクセルの神髄-その後№1、CSV出力を追加　（直接CSVを出力、データ加工有り）
+'https://excel-ubara.com/excelvba7/excelcustom37.html
+'引数
+'wksheet     :csv出力するデータの入ったワークシート（オブジェクト）
+'rngStart:csv出力する範囲の左端のセル
+'***********************************************************************
+    Dim file_pass As Variant                   '保存ファイル名の指定
+'   Dim FSO As New FileSystemObject 'Microsoft Scripting Runtimeの参照設定有り
+'   Dim TS As TextStream            'Microsoft Scripting Runtimeの参照設定有り
+    Dim row_min As Long
+    Dim row_max As Long
+    Dim column_min As Long
+    Dim column_max As Long
+    Dim current_row As Long
+    
+    Dim fso As Object                                    'Microsoft Scripting Runtimeの参照設定無し
+    Dim TS As Object                                     'Microsoft Scripting Runtimeの参照設定無し
+    Set fso = CreateObject("Scripting.FileSystemObject") 'Microsoft Scripting Runtimeの参照設定無し
+  
+    file_pass = Application.GetSaveAsFilename(InitialFileName:=wksheet.Name & ".csv", _
+                                            FileFilter:="CSVファイル(*.csv),*.csv", _
+                                            FilterIndex:=1, _
+                                            Title:="保存ファイルの指定")
+    If file_pass = False Then
+        
+        MsgBox ("処理を終了します。")
+        
+        Exit Sub
+        
+    End If
+        
+    If rngStart Is Nothing Then  '開始範囲を引数で指定していない場合。
+        row_min = 1
+        column_min = 1
+    Else
+        row_min = rngStart.row
+        column_min = rngStart.Column
+    End If
+    
+    row_max = get_last_row(wksheet)
+    column_max = get_last_column(wksheet)
+  
+
+    Set TS = fso.CreateTextFile(Filename:=file_pass, Overwrite:=True)
+  
+    For current_row = row_min To row_max
+            TS.WriteLine CSV_EditRec(wksheet, current_row, column_min, column_max) 'CSV_EditRec関数で編集したデータを1行ずつ書き込む
+    Next
+  
+    TS.Close
+    Set TS = Nothing
+    Set fso = Nothing
+
+    MsgBox ("CSV出力しました。" & vbLf & vbLf & file_pass)
+
+End Sub
+
+Private Function CSV_EditRec(ByVal wksheet As Worksheet, current_row As Long, column_min As Long, column_max As Long) As String
+'***********************************************************************
+'CSVデータの編集
+'引数
+' wksheet:CSV出力するシート名
+' current_row:現在処理しているセルの行番号
+' column_min:処理するセルの列番号の最小値
+' column_max:処理するセルの列番号の最大値
+'***********************************************************************
+    Dim row_string As String  '1行分のCSVテキスト文字列
+    Dim column_string As String  '現在処理している列の文字列
+    Dim current_column As Long  '現在処理しているセルの列番号
+
+    row_string = ""
+    
+    For current_column = column_min To column_max
+        
+        Select Case True
+            
+            Case IsNumeric(wksheet.Cells(current_row, current_column)) 'セルの値が数値の場合
+                
+                column_string = CStr(CDbl(wksheet.Cells(current_row, current_column)))
+            
+            Case IsDate(wksheet.Cells(current_row, current_column)) 'セルの値が日付の場合
+                
+                If InStr(wksheet.Cells(current_row, current_column), "-") Then ' 2023-2-12という形式だった場合
+                    
+                    column_string = wksheet.Cells(current_row, current_column)
+                
+                Else
+                    
+                    column_string = Format(wksheet.Cells(current_row, current_column), "yyyy/mm/dd")
+                
+                End If
+            
+            Case InStr(wksheet.Cells(current_row, current_column), ","), InStr(wksheet.Cells(current_row, current_column), """")
+                'セルの値が、カンマまたはダブルクオーテーションを含む場合
+                column_string = """" & wksheet.Cells(current_row, current_column) & """"
+            
+            Case Else 'その他
+            
+                column_string = wksheet.Cells(current_row, current_column)
+        
+        End Select
+        
+        If row_string = "" Then
+            
+            row_string = column_string
+        
+        Else
+            
+            row_string = row_string & "," & column_string
+        
+        End If
+        
+    Next
+    
+    CSV_EditRec = row_string
+
+End Function
+
+Function get_last_row(ByVal sht As Worksheet) As Long
+Dim ary As Variant
+    Dim i As Long, j As Long
+    ary = sht.Range(sht.Cells(1, 1), sht.Cells.SpecialCells(xlLastCell))
+    Do
+        For i = UBound(ary, 1) To LBound(ary, 1) Step -1
+            j = 1
+            For j = LBound(ary, 2) To UBound(ary, 2)
+                If ary(i, j) <> "" Then
+                    get_last_row = i
+                    Exit Function
+                End If
+            Next j
+        Next i
+    Loop
+End Function
+
+Function get_last_column(ByVal sht As Worksheet) As Long
+Dim ary As Variant
+    Dim i As Long, j As Long
+    ary = sht.Range(sht.Cells(1, 1), sht.Cells.SpecialCells(xlLastCell))
+    Do
+        For i = UBound(ary, 2) To LBound(ary, 2) Step -1
+            j = 1
+            For j = LBound(ary, 1) To UBound(ary, 1)
+                If ary(j, i) <> "" Then
+                    get_last_column = i
+                    Exit Function
+                End If
+            Next j
+        Next i
+    Loop
+End Function
+
+
+
