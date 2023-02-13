@@ -1,0 +1,589 @@
+Option Compare Database
+Option Explicit
+
+Function text_file_read_write()
+'***********************************************************
+'ADODB.Streamを使ったテキストファイルの読み書き
+'https://k-sugi.sakura.ne.jp/it_synthesis/windows/vb/3650/
+'***********************************************************
+テキストファイルの読み込み
+Dim sr      As Object
+Dim strData As String
+Set sr = CreateObject("ADODB.Stream")
+
+sr.Mode = 3 '読み取り/書き込みモード
+sr.Type = 2 'テキストデータ
+sr.Charset = "UTF-8" '文字コードを指定
+
+sr.Open 'Streamオブジェクトを開く
+sr.LoadFromFile ("ファイルのフルパス") 'ファイルの内容を読み込む
+sr.Position = 0 'ポインタを先頭へ
+
+strData = sr.ReadText() 'データ読み込み
+
+sr.Close 'Streamを閉じる
+
+Set sr = Nothing 'オブジェクトの解放
+
+テキストファイルの書き込み
+Dim sr      As Object
+Dim strData As String
+
+Set sr = CreateObject("ADODB.Stream")
+
+sr.Mode = 3 '読み取り/書き込みモード
+sr.Type = 2 'テキストデータ
+sr.Charset = "UTF-8" '文字コードを指定
+
+sr.Open 'Streamオブジェクトを開く
+sr.WriteText strData, 0 '0:adWriteChar
+
+sr.SaveToFile "ファイルのフルパス", 2 '2:adSaveCreateOverWrite
+
+sr.Close 'Streamを閉じる
+
+Set sr = Nothing 'オブジェクトの解放
+
+End Function
+
+'********************************************************************************************************
+'【Access】非連結フォームデータ検索・更新・追加・削除（VBA処理）
+'https://pctips.jp/pc-soft/access-serach-vba-howto201907/
+'********************************************************************************************************
+Private Sub 商品名検索_AfterUpdate()
+
+Dim stCD As String
+Dim CN As New ADODB.Connection
+Dim RS As New ADODB.Recordset
+
+Set CN = CurrentProject.Connection
+RS.CursorLocation = adUseClient
+RS.Open "商品マスタ", CN, adOpenKeyset, adLockOptimistic
+
+RS.Filter = "商品名 Like '*" & Me!商品名検索 & "*'"
+
+Set Me.Recordset = RS
+If RS.EOF Then
+    MsgBox ("条件に一致するデータは存在しませんでした。")
+    With Me
+        !call_ID = ""
+        !call_商品名 = ""
+        !call_分類 = ""
+        !call_値段 = ""
+    End With
+
+Else
+
+    With Me
+      !call_ID = RS!ID
+      !call_商品名 = RS!商品名
+      !call_分類 = RS!分類
+       !call_値段 = RS!値段
+    End With
+
+End If
+
+RS.Close: Set RS = Nothing
+CN.Close: Set CN = Nothing
+商品名検索 = Nul
+
+Me.Visible = False
+Me.Visible = True
+Me.商品名検索.SetFocus
+
+End Sub
+
+Private Sub btn_更新_Click()
+
+Dim CN As New ADODB.Connection
+Dim RS As New ADODB.Recordset
+Dim SQL As String
+
+On Error GoTo ErrRtn
+
+If IsNull(call_ID) Then
+    MsgBox ("データが選択されていません。")
+    Exit Sub
+End If
+
+If MsgBox("更新しますか？ yes/no", vbYesNo, "更新確認") = vbYes Then
+
+    SQL = "SELECT * FROM 商品マスタ WHERE ID =" & Me!call_ID & ""
+
+    Set CN = CurrentProject.Connection
+    RS.Open SQL, CN, adOpenKeyset, adLockOptimistic
+
+    CN.BeginTrans
+
+    While Not RS.EOF
+
+        RS!商品名 = call_商品名
+        RS!分類 = call_分類
+        RS!値段 = call_値段
+
+        RS.Update
+        RS.MoveNext
+    Wend
+
+    CN.CommitTrans
+
+    RS.Close: Set RS = Nothing
+    CN.Close: Set CN = Nothing
+
+Else
+    MsgBox ("更新しませんでした。")
+    Exit Sub
+
+End If
+
+ExitErrRtn:
+
+    DoCmd.ShowAllRecords
+
+    Exit Sub
+
+ErrRtn:
+    MsgBox "エラー： " & Err.Description
+
+    CN.RollbackTrans
+    RS.Close: Set RS = Nothing
+    CN.Close: Set CN = Nothing
+
+End Sub
+
+Private Sub btn_追加_Click()
+
+Dim CN As New ADODB.Connection
+Dim RS As New ADODB.Recordset
+
+If IsNull(call_商品名) Then
+    MsgBox ("商品名が入力されていません。")
+    Exit Sub
+End If
+
+If IsNull(call_分類) Then
+    MsgBox ("分類が入力されていません。")
+    Exit Sub
+End If
+
+If MsgBox("追加しますか？ yes/no", vbYesNo, "データ追加確認") = vbYes Then
+
+    On Error GoTo ErrRtn
+
+    Set CN = CurrentProject.Connection
+    Set RS = New ADODB.Recordset
+    RS.Open "商品マスタ", CN, adOpenKeyset, adLockOptimistic
+
+    ' トランザクションの開始
+    CN.BeginTrans
+
+    RS.AddNew
+
+    RS!商品名 = call_商品名
+    RS!分類 = call_分類
+    RS!値段 = call_値段
+
+    RS.Update
+    MsgBox ("追加しました。")
+
+    ' トランザクションの保存
+    CN.CommitTrans
+
+    RS.Close: Set RS = Nothing
+    CN.Close: Set CN = Nothing
+
+Else
+
+    MsgBox ("追加しませんでした。")
+    Exit Sub
+
+End If
+
+ExitErrRtn:
+    call_ID = Null
+    call_商品名 = Null
+    call_分類 = Null
+    call_値段 = Null
+
+    Exit Sub
+
+ErrRtn:
+    MsgBox "エラー： " & Err.Description
+    'BeginTransの時点まで戻り、変更をキャンセルする
+
+    CN.RollbackTrans
+    RS.Close: Set RS = Nothing
+    CN.Close: Set CN = Nothing
+
+End Sub
+
+Private Sub btn_削除_Click()
+
+Dim CN As ADODB.Connection
+Dim RS As ADODB.Recordset
+
+On Error GoTo ErrRtn
+
+    If MsgBox("実行しますか？ yes/no", vbYesNo, "削除確認") = vbYes Then
+
+        Set CN = CurrentProject.Connection
+        Set RS = New ADODB.Recordset
+
+        CN.BeginTrans
+
+        RS.Open "商品マスタ", CN, adOpenStatic, adLockOptimistic
+
+        ' Debug.Print Me.call_ID
+
+        RS.Find "ID = " & call_ID
+
+        RS.Delete
+
+        CN.CommitTrans
+
+        RS.Close: Set RS = Nothing
+        CN.Close: Set CN = Nothing
+
+    Else
+
+        MsgBox "削除しませんでした。"
+
+    Exit Sub
+
+    End If
+
+ExitErrRtn:
+
+    DoCmd.ShowAllRecords
+
+    Exit Sub
+
+ErrRtn:
+    MsgBox "エラー： " & Err.Description
+    CN.RollbackTrans
+    RS.Close: Set RS = Nothing
+    CN.Close: Set CN = Nothing
+
+End Sub
+
+'************************************************************************
+'テキストファイルのデータをインポートする
+'https://www.moug.net/tech/acvba/0090030.html
+'TransferTextExportSampleを実行してから実行
+Sub TransferTextImportSample()
+    'エラーの場合、myErr:　へ
+    On Error GoTo myErr
+    '「C:\出力顧客テーブル.txt」のデータを
+    '［取込顧客テーブル］を作成して取り込む
+    DoCmd.TransferText acImportDelim, , "取込顧客テーブル" _
+            , "C:\出力顧客テーブル.txt"
+    MsgBox "「出力顧客テーブル.txt」を［取込顧客テーブル］として" _
+           & "取り込みました"
+    'プロシージャを終了
+    Exit Sub
+myErr:
+    MsgBox "サンプルTransferTextImportSampleの実行前に、" _
+        & "TransferTextExportSampleを実行し、" _
+        & "「C:\出力顧客テーブル.txt」を作成して下さい。"
+End Sub
+'*************************************************************************
+'データをテキストファイルにエクスポートする
+'https://www.moug.net/tech/acvba/0090029.html
+Sub TransferTextExportSample()
+    'エラーの場合、myErr:　へ
+    On Error GoTo myErr
+    '［顧客テーブル］のデータを、「C:\出力顧客テーブル.txt」に出力
+    DoCmd.TransferText acExportDelim, , "顧客テーブル", "C:\出力顧客テーブル."
+txt ""
+    MsgBox "［顧客テーブル］を「出力顧客テーブル.txt」に書き出しました"
+     'プロシージャを終了
+    Exit Sub
+myErr:
+    'エラーメッセージを出す
+    MsgBox Err.Description
+End Sub
+'**********************************************************************
+
+
+
+Sub Sample()
+'-----------------------------------------------------------------------
+'VBAで参照設定をしないでADOを使ってAccessDBへ接続する
+'https://ateitexe.com/vba-ado-not-reference/
+'-----------------------------------------------------------------------
+  Dim adoCn As Object 'ADOコネクションオブジェクト
+  Dim adoRs As Object 'ADOレコードセットオブジェクト
+  Dim strSQL As String 'SQL文
+  
+  'AccessVBAで現在のデータベースへ接続する場合
+  'Set adoCn = CurrentProject.Connection
+  
+  '外部のAccessファイルを指定して接続する場合
+  Set adoCn = CreateObject("ADODB.Connection") 'ADOコネクションのオブジェクトを作成
+  
+  adoCn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & _
+             "Data Source=C:\SampleData.accdb;" 'Accessファイルを指定
+             
+  strSQL = "任意のSQL文"
+  
+  '--------追加・更新・削除の場合はExecuteメソッドを使う------------
+  'adoCn.Execute strSQL 'SQLを実行
+  '--------追加・更新・削除の場合ここまで---------------------------
+  
+  '--------読込の場合Openメソッドを使う------------------------------
+  Set adoRs = CreateObject("ADODB.Recordset") 'ADOレコードセットのオブジェクトを作成
+  
+  adoRs.Open strSQL, adoCn 'レコード抽出
+  
+  Do Until adoRs.EOF '抽出したレコードが終了するまで処理を繰り返す
+    
+    Debug.Print adoRs!フィールド名 'フィールドを取り出す
+    
+    adoRs.MoveNext '次のレコードに移動する
+  
+  Loop
+  
+  adoRs.Close: Set adoRs = Nothing 'レコードセットの破棄
+  '---------読込の場合ここまで----------------------------------------
+  
+  adoCn.Close: Set adoCn = Nothing 'コネクションの破棄
+
+End Sub
+
+Private Sub テキストインポート()
+Dim INITIAL_PATH As String
+Dim FileName As String
+Dim ExistFlag As Boolean
+Dim ErrorMessage As String
+Dim db As dao.Database
+Dim RS As dao.Recordset
+
+On Error GoTo 0
+
+所定のパス = "C:\～～～～～\～～～.csv"
+
+FileName = Dir(所定のパス)
+
+If InStr(1, FileName, ".") > 0 Then
+  
+  FileName = Left(FileName, InStrRev(FileName, ".") - 1)
+
+End If
+
+On Error Resume Next 'エラーが起きても、無視して、次の行から再開
+
+    DoCmd.RunSQL "DROP TABLE [" & FileName & "_インポート エラー]" '既存のインポートエラーのテーブルを削除
+
+On Error GoTo 0 'エラーが起きたら、VBAの標準のエラー処理
+
+    DoCmd.TransferText acImportDelim, , "temp", 所定のパス, True
+
+On Error Resume Next
+
+'インポートエラーのテーブルが生成されていたらExistFlagがTrue
+    ExistFlag = CurrentDb.TableDefs(FileName & "_インポート エラー").Name = FileName & "_インポート エラー"
+
+    If ExistFlag = True Then
+  
+        Set db = CurrentDb()
+  
+        Set RS = db.OpenRecordset(FileName & "_インポート エラー", dbOpenTable)
+  
+        ErrorMessage = "インポートでエラーが発生しました。処理を中断します。" + vbCrLf
+  
+        Do Until RS.EOF
+    
+            ErrorMessage = ErrorMessage & RS!行 & "行目のフィールド「" _
+            & RS!フィールド & "」で「" & RS!エラー & "」が発生" & vbCrLf
+    
+            RS.MoveNext
+  
+        Loop
+  
+        Set RS = Nothing
+  
+        Set db = Nothing
+  
+        MsgBox ErrorMessage
+  
+        Exit Sub
+
+    End If
+
+On Error GoTo 0
+
+'インポートが成功した場合の続きの処理をここに書く
+(略)
+End Sub
+
+Sub CreateTableX6()
+'****************************************************
+'CREATE TABLE ステートメント (Microsoft Access SQL)
+'https://learn.microsoft.com/ja-jp/office/client-developer/access/desktop-database-reference/create-table-statement-microsoft-access-sql
+'****************************************************
+
+On Error Resume Next
+ 
+Application.CurrentDb.Execute "Drop Table [~~Kitsch'n Sync];"
+
+On Error GoTo 0
+        
+'This example uses ADODB instead of the DAO shown in the previous
+'ones because DAO does not support the DECIMAL and GUID data types
+Dim con As ADODB.Connection
+Set con = CurrentProject.Connection
+
+con.Execute "" _
+    & "CREATE TABLE [~~Kitsch'n Sync](" _
+    & " [Auto]                  COUNTER" _
+    & ",[Byte]                  BYTE" _
+    & ",[Integer]               SMALLINT" _
+    & ",[Long]                  INTEGER" _
+    & ",[Single]                REAL" _
+    & ",[Double]                FLOAT" _
+    & ",[Decimal]               DECIMAL(18,5)" _
+    & ",[Currency]              MONEY" _
+    & ",[ShortText]             VARCHAR" _
+    & ",[LongText]              MEMO" _
+    & ",[PlaceHolder1]          MEMO" _
+    & ",[DateTime]              DATETIME" _
+    & ",[YesNo]                 BIT" _
+    & ",[OleObject]             IMAGE" _
+    & ",[ReplicationID]         UNIQUEIDENTIFIER" _
+    & ",[Required]              INTEGER NOT NULL" _
+    & ",[Unicode Compression]   MEMO WITH COMP" _
+    & ",[Indexed]               INTEGER" _
+    & ",CONSTRAINT [PrimaryKey] PRIMARY KEY ([Auto])" _
+    & ",CONSTRAINT [Unique Index] UNIQUE ([Byte],[Integer],[Long])" _
+    & ");"
+
+con.Execute "CREATE INDEX [Single-Field Index] ON [~~Kitsch'n Sync]([Indexed]);"
+con.Execute "CREATE INDEX [Multi-Field Index] ON [~~Kitsch'n Sync]([Auto],[Required]);"
+con.Execute "CREATE INDEX [IgnoreNulls Index] ON [~~Kitsch'n Sync]([Single],[Double]) WITH IGNORE NULL;"
+con.Execute "CREATE UNIQUE INDEX [Combined Index] ON [~~Kitsch'n Sync]([ShortText],[LongText]) WITH IGNORE NULL;"
+        
+Set con = Nothing
+    
+'Add a Hyperlink Field
+Dim AllDefs As dao.TableDefs
+Dim TblDef As dao.TableDef
+Dim Fld As dao.Field
+
+Set AllDefs = Application.CurrentDb.TableDefs
+Set TblDef = AllDefs("~~Kitsch'n Sync")
+Set Fld = TblDef.CreateField("Hyperlink", dbMemo)
+
+Fld.Attributes = dbHyperlinkField + dbVariableField
+Fld.OrdinalPosition = 10
+
+TblDef.Fields.Append Fld
+        
+DoCmd.RunSQL "ALTER TABLE [~~Kitsch'n Sync] DROP COLUMN [PlaceHolder1];"
+
+End Sub
+
+Option Compare Database
+
+Option Explicit
+'---------------------------------------------------------------------------
+'Access帳票開発でレポート、クエリとかを複数人で触るための手順。
+'https://nameuntitled.hatenablog.com/entry/2016/08/26/185144
+'---------------------------------------------------------------------------------
+'Export
+Public Sub ExportModules()
+Dim outputDir As String
+Dim currentDat As Object
+Dim currentProj As Object
+
+outputDir = GetDir(CurrentDb.Name)
+
+Set currentDat = Application.CurrentData
+Set currentProj = Application.CurrentProject
+
+ExportObjectType acQuery, currentDat.AllQueries, outputDir, ".qry"
+ExportObjectType acForm, currentProj.AllForms, outputDir, ".frm"
+ExportObjectType acReport, currentProj.AllReports, outputDir, ".rpt"
+ExportObjectType acMacro, currentProj.AllMacros, outputDir, ".mcr"
+ExportObjectType acModule, currentProj.AllModules, outputDir, ".bas"
+
+End Sub
+
+'ファイル名のディレクトリ部分を返す
+Private Function GetDir(FileName As String) As String
+Dim p As Integer
+
+GetDir = FileName
+
+p = InStrRev(FileName, "\")
+
+If p > 0 Then GetDir = Left(FileName, p - 1)
+
+End Function
+
+'特定の種類のオブジェクトをエクスポートする
+Private Sub ExportObjectType(ObjType As Integer, _
+ObjCollection As Variant, Path As String, Ext As String)
+
+Dim obj As Variant
+Dim filePath As String
+
+For Each obj In ObjCollection
+    filePath = Path & "\dbObj\" & obj.Name & Ext
+    SaveAsText ObjType, obj.Name, filePath
+    Debug.Print "Save " & obj.Name
+Next
+
+End Sub
+
+'import objects
+Public Sub ImportModules()
+Dim inputDir As String
+Dim currentDat As Object
+Dim currentProj As Object
+
+inputDir = GetDir(CurrentDb.Name) & "\dbObj\"
+
+Set currentDat = Application.CurrentData
+Set currentProj = Application.CurrentProject
+
+ImportObjectType (inputDir)
+
+End Sub
+
+'import all objects in a folder
+Private Sub ImportObjectType(Path As String)
+
+Dim currentDat As Object
+Dim currentProj As Object
+
+Dim fso
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+Dim folder As Object
+Dim myFile, objectname, objecttype
+
+Set folder = CreateObject _
+("Scripting.FileSystemObject").GetFolder(Path)
+
+Dim oApplication
+
+For Each myFile In folder.Files
+    objecttype = fso.GetExtensionName(myFile.Name)
+    objectname = fso.GetBaseName(myFile.Name)
+
+    If (objecttype = "frm") Then
+        Application.LoadFromText acForm, objectname, myFile.Path
+    ElseIf (objecttype = "bas") Then
+        Application.LoadFromText acModule, objectname, myFile.Path
+    ElseIf (objecttype = "mcr") Then
+        Application.LoadFromText acMacro, objectname, myFile.Path
+    ElseIf (objecttype = "rpt") Then
+        Application.LoadFromText acReport, objectname, myFile.Path
+    ElseIf (objecttype = "qry") Then
+        Application.LoadFromText acQuery, objectname, myFile.Path
+    End If
+
+Next
+End Sub
+
+
