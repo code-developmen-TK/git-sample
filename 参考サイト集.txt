@@ -96,3 +96,6 @@ https://pctips.jp/pc-soft/access-serach-vba-howto201907/
 
 業務効率の改善をAccessで実践！！
 https://www.latest-info-system.com/
+
+【ADO / VBA】SQL文でAccess DBのテーブルを作成・削除する方法
+https://qiita.com/t-yama-3/items/f783527c6463a28ecc63
