@@ -1,14 +1,7 @@
-Sub WordDocDupulicate()
-'excel VBAを利用し、テンプレートとなるワードファイルの一部分を
-'https://oshiete.goo.ne.jp/qa/5989414.html
-'
-
-Dim wdApp As Word.Application
-Dim wdDoc As Word.Document
 Option Explicit
 
 Sub ボタン1_Click()
-'excel VBAを利用し、テンプレートとなるワードファイルの一部分を
+'excel VBAを利用し、テンプレートとなるワードファイルの一部分をエクセルデータで置換を行い、新しいワードファイルとして保存する
 'https://oshiete.goo.ne.jp/qa/5989414.html
 '
 Dim wdApp As Word.Application
