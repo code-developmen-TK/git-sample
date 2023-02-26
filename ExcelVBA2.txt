@@ -555,3 +555,127 @@ Sub GetFiles()
     
 End Sub
 
+Option Explicit
+
+Sub ボタン1_Click()
+'エクセルマクロVBAで別ブックから転記
+'https://fastclassinfo.com/entry/vba_get_data_from_other_books/
+    Dim my_data_sheet As Worksheet
+    Dim my_data_sheet_last_row As Long
+    Dim source_file_name As String
+    Dim source_book As Workbook
+    Dim source_sheet As Worksheet
+    Dim source_sheet_last_row As Long
+    Dim data As Variant
+    Dim sheet_names As Variant
+    Dim sheet_name As Variant
+    Dim source_sheet_rows As Long 'ソースデータシートの読み込む行数
+    Dim source_sheet_clumns As Long 'ソースデータシートの読み込む列数
+    Dim i As Long
+    
+    Const SOURSE_DATASHEET_FIRST_ROWS As Integer = 34 'ソースデータシートを読み込む最初の行。
+    Const SOURSE_DATASHEET_CLUMNS As Integer = 34 'ソースデータシートの列数。
+   
+    
+    sheet_names = Array("カテゴリ１", "カテゴリ2")
+    
+    Set my_data_sheet = ThisWorkbook.Worksheets("Sheet1")
+    
+    '自分自身の最終行を取得
+    my_data_sheet_last_row = get_last_row(my_data_sheet)
+    
+    source_file_name = Application.GetOpenFilename("Microsoft Excelブック,*.xls?")
+
+    If source_file_name <> "False" Then
+        source_file_name = Dir(source_file_name) 'ファイル名だけ抜き出す。
+     Else
+        MsgBox "キャンセルされました"
+        Exit Sub
+    End If
+    
+    Set source_book = Workbooks.Open(source_file_name, ReadOnly:=True)
+
+    For Each sheet_name In sheet_names
+        
+        Set source_sheet = source_book.Worksheets(sheet_name)
+
+        'ソースファイルの最終行の取得
+        source_sheet_last_row = get_last_row(source_sheet)
+    
+        ' ソースファイルのデータのある範囲を指定して配列に格納する。
+        With source_sheet
+            data = .Range(.Cells(SOURSE_DATASHEET_FIRST_ROWS, 1), _
+                   .Cells(source_sheet_last_row, SOURSE_DATASHEET_CLUMNS)).Value
+        End With
+    
+        source_sheet_rows = UBound(data, 1)
+        source_sheet_clumns = UBound(data, 2)
+        
+        Debug.Print source_sheet_rows, source_sheet_clumns
+        
+        ReDim Preserve data(1 To source_sheet_rows, 1 To source_sheet_clumns + 1)
+        source_sheet_clumns = source_sheet_clumns + 1
+        
+        For i = 1 To source_sheet_rows
+        
+            data(i, source_sheet_clumns) = Format(Date, "yyyy/mm/dd")
+            
+            Debug.Print data(i, source_sheet_clumns)
+            
+        Next i
+
+        '配列に格納されたデータを自分自身のシートに入力する。
+        my_data_sheet.Range("A" & my_data_sheet_last_row + 1).Resize(source_sheet_rows, source_sheet_clumns).Value = data
+
+    Next sheet_name
+    
+    source_book.Close
+
+'プログラム12｜プログラム終了
+End Sub
+
+Function get_last_row(ByVal sht As Worksheet) As Long
+'***************************************************
+'概要：最終行を取得する関数
+'エクセルの神髄-その後№1、CSV出力を追加
+'https://excel-ubara.com/excelvba7/excelcustom37.html
+'***************************************************
+Dim ary As Variant
+    Dim i As Long, j As Long
+    ary = sht.Range(sht.Cells(1, 1), sht.Cells.SpecialCells(xlLastCell))
+    Do
+        For i = UBound(ary, 1) To LBound(ary, 1) Step -1
+            j = 1
+            For j = LBound(ary, 2) To UBound(ary, 2)
+                If ary(i, j) <> "" Then
+                    get_last_row = i
+                    Exit Function
+                End If
+            Next j
+        Next i
+    Loop
+End Function
+
+Function get_last_column(ByVal sht As Worksheet) As Long
+'***************************************************
+'概要：最終列を取得する関数
+'エクセルの神髄-その後№1、CSV出力を追加
+'https://excel-ubara.com/excelvba7/excelcustom37.html
+'***************************************************
+Dim ary As Variant
+    Dim i As Long, j As Long
+    ary = sht.Range(sht.Cells(1, 1), sht.Cells.SpecialCells(xlLastCell))
+    Do
+        For i = UBound(ary, 2) To LBound(ary, 2) Step -1
+            j = 1
+            For j = LBound(ary, 1) To UBound(ary, 1)
+                If ary(j, i) <> "" Then
+                    get_last_column = i
+                    Exit Function
+                End If
+            Next j
+        Next i
+    Loop
+End Function
+
+
