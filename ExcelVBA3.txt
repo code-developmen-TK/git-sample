@@ -1,0 +1,104 @@
+Sub ボタン1_Click()
+'エクセルマクロVBAで別ブックから転記
+'https://fastclassinfo.com/entry/vba_get_data_from_other_books/
+    Dim my_data_sheet As Worksheet     '自分自身のシート名
+    Dim my_data_sheet_last_row As Long '自分自身のデータの入っている最終行
+    Dim source_file_name As String     '取り込むデータの入っているExcelファイル名
+    Dim source_book As Workbook        '取り込むデータの入っているExcelBookオブジェクト
+    Dim source_sheet As Worksheet      '取り込むデータの入っているExcelSheetオブジェクト
+    Dim source_sheet_last_row As Long  '取り込むデータの入っているsheetの最終行
+    Dim data As Variant                '取り込むデータを格納する配列
+    Dim sheet_names As Variant         '取り込むデータの入っているsheet名の配列
+    Dim sheet_name As Variant          '取り込むデータの入っているsheet名
+    Dim source_sheet_rows As Long      'ソースデータシートの読み込む行数
+    Dim source_sheet_clumns As Long    'ソースデータシートの読み込む列数
+    Dim i As Long '
+    Dim my_last_clumn As Long
+    
+'    Dim xlLastRow As Long
+'
+    Const FIRST_ROW As Long = 6 '処理するデータの入っている最初の行。
+    Const FIRST_CLUMN As Long = 1 '処理するデータの入っている最初の列。
+    Const DATASHEET_CLUMNS As Long = 34 'データシートの列数。
+    Const DEFAULT_FOLDER As String = "D:\VBA開発\access" '最初に開くフォルダを指定
+    Const SOTOYOUKI_NUMBAER As Long = 4 '外容器番号の入っている列
+    
+    sheet_names = Array("カテゴリ１", "カテゴリ2")
+    
+    Set my_data_sheet = ThisWorkbook.Worksheets("Sheet1")
+    
+    With Application.FileDialog(msoFileDialogFilePicker)
+        '「ファイルの種類」をクリア
+        .Filters.Clear
+        '「ファイルの種類」を登録
+        .Filters.Add "Excelブック", "*.xls; *.xlsx; *.xlsm", 1
+        .InitialFileName = DEFAULT_FOLDER '最初に開くフォルダを指定
+        If .Show = 0 Then
+            MsgBox "キャンセルボタンをクリックしました。"
+            Exit Sub
+        End If
+            source_file_name = Dir(.SelectedItems(1)) 'ファイル名だけ抜き出す。
+    End With
+    
+    Set source_book = Workbooks.Open(source_file_name, ReadOnly:=True)
+
+    For Each sheet_name In sheet_names
+        
+       Set source_sheet = source_book.Worksheets(sheet_name)
+       
+        '自分自身の最終行を取得
+        my_data_sheet_last_row = get_last_row(my_data_sheet, SOTOYOUKI_NUMBAER)
+        
+        'ソースファイルの最終行取得
+        source_sheet_last_row = get_last_row(source_sheet, SOTOYOUKI_NUMBAER)
+    
+        ' ソースファイルのデータのある範囲を指定して配列に格納する。
+        With source_sheet
+            data = .Range(.Cells(FIRST_ROW, 1), _
+                   .Cells(source_sheet_last_row, DATASHEET_CLUMNS)).Value
+        End With
+    
+        source_sheet_rows = UBound(data, 1)
+        source_sheet_clumns = UBound(data, 2)
+        
+        'データを格納した配列に、更新した日時を入れる列を追加する
+        source_sheet_clumns = source_sheet_clumns + 1
+        ReDim Preserve data(1 To source_sheet_rows, 1 To source_sheet_clumns)
+        
+        For i = 1 To source_sheet_rows
+            
+            data(i, source_sheet_clumns) = Now()
+
+        Next i
+
+        '配列に格納されたデータを自分自身のシートに入力する。
+        my_data_sheet.Range("A" & my_data_sheet_last_row + 1).Resize(source_sheet_rows, source_sheet_clumns).Value = data
+
+    Next sheet_name
+
+    '自分自身の最終行を取得
+    my_data_sheet_last_row = get_last_row(my_data_sheet, SOTOYOUKI_NUMBAER)
+    
+    my_last_clumn = source_sheet_clumns
+
+    With my_data_sheet
+    
+        .Range(.Cells(FIRST_ROW, FIRST_CLUMN), .Cells(my_data_sheet_last_row, my_last_clumn)).Borders.LineStyle = True
+    
+    End With
+    
+    source_book.Close
+
+End Sub
+
+Function get_last_row(ByVal sht As Worksheet, inspect_row As Long) As Long
+'***************************************************
+'概要：最終行を取得する関数
+'***************************************************
+    Dim xlLastRow As Long
+    Dim LastRow As Long         '最終行
+   
+    xlLastRow = sht.Cells(Rows.Count, 1).Row  'Excelの最終行
+    get_last_row = sht.Cells(xlLastRow, inspect_row).End(xlUp).Row  'シートの最終行から遡って値の入っている行を取得
+
+End Function
