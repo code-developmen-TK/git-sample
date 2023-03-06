@@ -1,0 +1,123 @@
+Sub ボタン1_Click()
+'範囲名を設定する。
+    Dim xlLastRow As Long       'Excel自体の最終行
+    Dim LastRow As Long         '使用している範囲の最終行
+ 
+    xlLastRow = Cells(Rows.Count, 1).Row  'Excelの最終行を取得
+    LastRow = Cells(xlLastRow, 3).End(xlUp).Row   'C列の最終行を取得
+    
+    With Worksheets("Sheet1")
+      .Range(.Cells(1, 1), .Cells(LastRow, 6)).Name = "受入物"
+    End With
+    
+    ThisWorkbook.Save '上書き保存
+    
+End Sub
+
+Private cancelled As Boolean
+
+Sub 実行()
+'VBA DoEvents 関数：応答なしを回避する
+'https://www.tipsfound.com/vba/05doevents
+    cancelled = False
+
+    ' 時間のかかる処理
+    Dim i As Long
+    For i = 1 To 10000
+        Range("A1").Value = i
+    
+        ' 100 回毎に DoEvents を実行
+        If i Mod 100 = 0 Then
+            DoEvents ' クリックイベントが発生
+
+            ' 処理をキャンセル
+            If cancelled = True Then
+                Exit Sub
+            End If
+        End If
+    Next
+
+End Sub
+
+' キャンセルボタン
+Private Sub CommandButton1_Click()
+    cancelled = True
+End Sub
+'----------------------------------------------------------------------------------------------------------
+'VBAの処理を一時中断してWindowsの操作を行う（DoEvents）
+'https://vbabeginner.net/doevents/
+'--------------------------------------------------------------------------------
+'// 64bit版
+#If VBA7 And Win64 Then
+    Private Declare PtrSafe Function GetInputState Lib "user32" Alias "GetInputState" () As Long
+'// 32bit版
+#Else
+    Private Declare Function GetInputState Lib "user32" () As Long
+#End If
+
+Sub DoEventsTest()
+    On Error Resume Next
+    
+    Dim i
+    Dim dTimer      '// 0時からの経過秒数
+    Dim dElapsed    '// 前回Timer関数実行時からの経過秒数
+    
+    '// セルの入力値を削除
+    Cells.Clear
+    
+    i = 0
+    m_bButtonClick = False
+    dTimer = Timer
+    
+    '// 横（列）ループ
+    Do
+        '// イベント発生時、または、1秒経過した場合
+        If (GetInputState() Or dElapsed > 1) Then
+            '// Windowsに制御を渡す
+            DoEvents
+                        
+            '// B1セルに"a"を入力
+            If (Range("B1").Value = "a") Then
+                '// ループを抜ける
+                Exit Do
+            End If
+                
+            '// DoEvents用ループカウンタを初期化
+            i = 0
+            
+            dTimer = Timer
+        End If
+        
+        '// A1セルにループカウンタ値をセット
+        Range("A1").Value = CStr(i)
+        
+        '// DoEvents用ループカウンタを加算
+        i = i + 1
+        
+        '// 経過秒数
+        dElapsed = Abs(Timer - dTimer)
+        
+        '// エラー発生時
+        If Err.Number <> 0 Then
+            '// イミディエイトウィンドウにエラーを出力
+            Debug.Print Err.Number & " " & Err.Description
+            '// エラーをクリア
+            Err.Clear
+        End If
+    Loop
+End Sub
+
+Sub Sanple02()
+'--------------------------------------------------------
+'ステータスバーを使う
+'http://officetanaka.net/excel/vba/tips/tips13.htm
+'-----------------------------------------------------------
+    Dim i As Long
+    For i = 1 To 20000
+        If i Mod 1000 = 0 Then
+            Range("A1") = i
+            Application.StatusBar = "処理中..." & String(Int(i / 1000), "■")
+        End If
+    Next i
+    Application.StatusBar = False
+End Sub
