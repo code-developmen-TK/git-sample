@@ -1,0 +1,234 @@
+Option Explicit
+
+Public Const FIRST_ROW As Long = 6    '処理するデータの入っている最初の行。
+Public Const FIRST_CLUMN As Long = 1    '処理するデータの入っている最初の列。
+Public Const DATASHEET_CLUMNS As Long = 34    'データシートの列数。
+Public Const SOTOYOUKI_NUMBAER As Long = 4    '外容器番号の入っている列
+Public Const DEFAULT_FOLDER As String = "D:\VBA開発\excel\履歴管理データ"    '最初に開くフォルダを指定
+Public Const SHEET_NUMBER1 As String = "カテゴリ１"
+Public Const SHEET_NUMBER2 As String = "カテゴリ2"
+Public Const SPRIT_ROW As Long = 21
+Public Const UCHIYOUKI_NUMBER As Long = 1
+
+Sub ボタン1_Click()
+'エクセルマクロVBAで別ブックから転記
+'https://fastclassinfo.com/entry/vba_get_data_from_other_books/
+    Dim sheet1_name As String '自分自身のデータの入っている最終行
+    Dim sheet1 As Worksheet     '自分自身のシート名
+    Dim sheet1_last_row As Long '自分自身のデータの入っている最終行
+    Dim sheet2_name As String
+    Dim sheet2 As Worksheet
+    Dim sheet2_last_row As Long
+    Dim source_sheet_name As String     '取り込むデータの入っているExcelファイル名
+    Dim source_sheet_rows As Long
+    Dim source_sheet_clumns As Long
+    Dim data As Variant
+    Dim left_array As Variant
+    Dim right_array As Variant
+        
+    sheet1_name = "受入物情報"
+    
+    Set sheet1 = ThisWorkbook.Worksheets(sheet1_name)
+    
+    sheet2_name = "処理"
+    
+     Set sheet2 = ThisWorkbook.Worksheets(sheet2_name)
+    
+    source_sheet_name = get_file_name(DEFAULT_FOLDER)  'ファイルダイアログを表示して開くファイルの名称を取得。
+
+    If source_sheet_name = "" Then
+    
+        Exit Sub
+    
+    End If
+    
+    data = load_source_data(source_sheet_name)
+    
+    left_array = SplitArrayLeft(data, SPRIT_ROW)
+    
+    right_array = SplitArrayRight(data, SPRIT_ROW)
+
+    '自分自身の最終行を取得
+    sheet1_last_row = get_last_row(sheet1, SOTOYOUKI_NUMBAER)
+
+    source_sheet_rows = UBound(left_array, 1)
+    source_sheet_clumns = UBound(left_array, 2)
+        
+    '配列に格納されたデータを自分自身のシートに入力する｡
+    sheet1.Range("A" & sheet1_last_row + 1).Resize(source_sheet_rows, source_sheet_clumns).Value = left_array
+
+    sheet2_last_row = get_last_row(sheet2, UCHIYOUKI_NUMBER)
+
+    source_sheet_rows = UBound(right_array, 1)
+    source_sheet_clumns = UBound(right_array, 2)
+        
+    '配列に格納されたデータを自分自身のシートに入力する｡
+    sheet2.Range("A" & sheet2_last_row + 1).Resize(source_sheet_rows, source_sheet_clumns).Value = right_array
+
+End Sub
+
+Function get_last_row(ByVal sht As Worksheet, inspect_row As Long) As Long
+'***************************************************
+'概要：最終行を取得する関数
+'***************************************************
+    Dim xlLastRow As Long
+    Dim LastRow As Long         '最終行
+   
+    xlLastRow = sht.Cells(Rows.Count, 1).Row  'Excelの最終行
+    get_last_row = sht.Cells(xlLastRow, inspect_row).End(xlUp).Row  'シートの最終行から遡って値の入っている行を取得
+
+End Function
+
+Function get_file_name(DEFAULT_FOLDER As String) As String
+'-----------------------------------------------------------------
+'概要：ファイルダイアログを表示して開くファイルの名称を取得する関数。
+'引数：DEFAULT_FOLDER　最初に開くフォルダ名
+'----------------------------------------------------------------
+    
+    With Application.FileDialog(msoFileDialogFilePicker)
+        '「ファイルの種類」をクリア
+        .Filters.Clear
+        '「ファイルの種類」を登録
+        .Filters.Add "Excelブック", "*.xls; *.xlsx; *.xlsm", 1
+        .InitialFileName = DEFAULT_FOLDER '最初に開くフォルダを指定
+        If .Show = 0 Then
+            MsgBox "キャンセルボタンをクリックしました。"
+            get_file_name = ""
+            Exit Function
+        End If
+            get_file_name = Dir(.SelectedItems(1)) 'ファイル名だけ抜き出す。
+    End With
+    
+End Function
+
+Function load_source_data(source_data_sheet_name As String) As Variant
+    Dim source_data_book As Workbook         '取り込むデータの入っているExcelBookオブジェクト
+    Dim source_data_sheet As Worksheet      '取り込むデータの入っているExcelSheetオブジェクト
+    Dim source_data_sheet_last_row As Long  '取り込むデータの入っているsheetの最終行
+    Dim source_data_sheet_rows As Long      'ソースデータシートの読み込む行数
+    Dim source_data_sheet_clumns As Long    'ソースデータシートの読み込む列数
+    Dim sheet_names As Variant          '取り込むデータの入っているsheet名
+    Dim sheet_name As Variant          '取り込むデータの入っているsheet名
+    Dim data1 As Variant                '取り込むデータを格納する配列
+    Dim data2 As Variant
+    Dim merge_data As Variant
+    Dim i As Long '
+    
+     
+     Set source_data_book = Workbooks.Open(source_data_sheet_name, ReadOnly:=True)
+    
+    sheet_names = Array(SHEET_NUMBER1, SHEET_NUMBER2)
+
+    For Each sheet_name In sheet_names
+        
+       Set source_data_sheet = source_data_book.Worksheets(sheet_name)
+ 
+        'ソースファイルの最終行取得
+        source_data_sheet_last_row = get_last_row(source_data_sheet, SOTOYOUKI_NUMBAER)
+    
+        ' ソースファイルのデータのある範囲を指定して配列に格納する。
+        With source_data_sheet
+            If sheet_name = sheet_names(0) Then
+                
+                data1 = .Range(.Cells(FIRST_ROW, 1), _
+                       .Cells(source_data_sheet_last_row, DATASHEET_CLUMNS)).Value
+            
+            Else
+            
+                data2 = .Range(.Cells(FIRST_ROW, 1), _
+                       .Cells(source_data_sheet_last_row, DATASHEET_CLUMNS)).Value
+                
+            End If
+            
+        End With
+ 
+    Next sheet_name
+ 
+    merge_data = MergeArray_Row(data1, data2)
+    
+    source_data_book.Close
+
+    load_source_data = merge_data
+
+End Function
+
+'■2個の二次元配列を行方向(縦方向)に結合(マージ)する
+Public Function MergeArray_Row(arr1 As Variant, arr2 As Variant) As Variant
+'---------------------------------------------------------------------------------
+'「二次元配列を行方向に結合(マージ)する」処理をパーツ化する【ExcelVBA】
+'https://vba-create.jp/vba-array-merge-row-two-dimensions/
+'----------------------------------------------------------------------------------
+    '■結合(マージ)後の配列サイズ
+    '■■行方向(縦)に結合、列方向(横)は二次元配列の大きい方に合わせる。
+    Dim ROW_NEW As Long
+    Dim COL_NEW As Long
+    ROW_NEW = UBound(arr1, 1) + UBound(arr2, 1)
+    COL_NEW = Application.WorksheetFunction.Max(UBound(arr1, 2), UBound(arr2, 2))
+     
+    '■結合(マージ)後の二次元配列
+    Dim newArr As Variant
+    ReDim newArr(1 To ROW_NEW, 1 To COL_NEW)
+     
+    '■二次元配列を結合処理
+    Dim i As Long
+    Dim j As Long
+    For i = 1 To ROW_NEW
+        If i <= UBound(arr1, 1) Then
+            For j = 1 To COL_NEW
+                If j <= UBound(arr1, 2) Then
+                    newArr(i, j) = arr1(i, j)
+                Else
+                    newArr(i, j) = Empty
+                End If
+            Next j
+        Else
+            For j = 1 To COL_NEW
+                If j <= UBound(arr2, 2) Then
+                    newArr(i, j) = arr2(i - UBound(arr1, 1), j)
+                Else
+                    newArr(i, j) = Empty
+                End If
+            Next j
+        End If
+    Next i
+     
+    MergeArray_Row = newArr
+     
+End Function
+
+Function SplitArrayLeft(OriginalArray As Variant, SplitColumn As Long) As Variant
+    Dim i As Long
+    Dim j As Long
+    Dim LeftArray() As Variant
+    
+    ReDim LeftArray(1 To UBound(OriginalArray, 1), 1 To SplitColumn - 1)
+    
+    For i = 1 To UBound(OriginalArray, 1)
+        For j = 1 To UBound(OriginalArray, 2)
+            If j <= SplitColumn - 1 Then
+                LeftArray(i, j) = OriginalArray(i, j)
+           End If
+        Next j
+    Next i
+    
+    SplitArrayLeft = LeftArray
+    
+End Function
+Function SplitArrayRight(OriginalArray As Variant, SplitColumn As Long) As Variant
+    Dim i As Long
+    Dim j As Long
+    Dim RightArray() As Variant
+
+    ReDim RightArray(1 To UBound(OriginalArray, 1), 1 To UBound(OriginalArray, 2) - SplitColumn + 1)
+    
+    For i = 1 To UBound(OriginalArray, 1)
+        For j = 1 To UBound(OriginalArray, 2)
+            If j > SplitColumn - 1 Then
+               RightArray(i, j - SplitColumn + 1) = OriginalArray(i, j)
+            End If
+        Next j
+    Next i
+    
+    SplitArrayRight = RightArray
+
+End Function
