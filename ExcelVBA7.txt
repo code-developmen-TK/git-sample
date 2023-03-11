@@ -1,0 +1,327 @@
+Option Explicit
+
+Public Const HISTORY_SHEET_FIRST_ROW As Long = 8               '読み込むデータの入っているシートの最初の行。
+Public Const HISTORY_SHEET_FIRST_CLUMN As Long = 1             '読み込むデータの入っているシートの最初の列。
+Public Const HISTORY_SHEET_CLUMNS As Long = 34                 '読み込むデータの入っているシートの列数。
+Public Const HISTORY_SHEET_NUMBER1 As String = "カテゴリ１"    '読み込むデータの入っているシート１の名前
+Public Const HISTORY_SHEET_NUMBER2 As String = "カテゴリ2"     '読み込むデータの入っているシート２の名前
+Public Const SPRIT_ROW As Long = 21                            '読み込むデータの入っているシート（配列）の左右分割位置
+
+Public Const SOTOYOUKI_NUMBAER As Long = 4                     '読み込むデータの入っているシートの外容器番号の入っている列
+
+Public Const UCHIYOUKI_NUMBER1 As Long = 9                     '読み込むデータの入っているシートの内容器番号の入っている列
+Public Const CONTENT1 As Long = 10                             '読み込むデータの入っているシートの内容物の入っている列
+Public Const WEIGHT1 As Long = 12                              '読み込むデータの入っているシートの重量の入っている列
+Public Const DOSE1 As Long = 13                                '読み込むデータの入っているシートの量の入っている列
+
+Public Const UCHIYOUKI_NUMBER2 As Long = 21                    '読み込むデータの入っているシートの内容器番号の入っている列
+Public Const CONTENT2 As Long = 24                             '読み込むデータの入っているシートの内容物の入っている列
+Public Const WEIGHT2 As Long = 23                              '読み込むデータの入っているシートの重量の入っている列
+Public Const DOSE2 As Long = 25                                '読み込むデータの入っているシートの量の入っている列
+
+Public Const DEFAULT_FOLDER As String = "D:\VBA開発\excel\履歴管理データ" '最初に開くフォルダを指定
+'Public Const SHEET1_NAME As String = "受入物情報"
+'Public Const SHEET2_NAME As String = "処理"
+'Public Const SHEET3_NAME As String = "履歴管理表"
+Public Const PROCESSING_DATE As Long = 32
+
+Sub ボタン1_Click()
+'エクセルマクロVBAで別ブックから転記
+'https://fastclassinfo.com/entry/vba_get_data_from_other_books/
+'    Dim object_information_sheet_name As String   '受入物情報データシートの名前
+'    Dim object_information_sheet As Worksheet     '受入物情報データシートのWorksheetオブジェクト
+'    Dim object_information_sheet_last_row As Long '受入物情報データシートの最終行
+'
+'    Dim treatment_sheet_name As String            '処理データシートの名前
+'    Dim treatment_sheet As Worksheet              '処理データシートのWorksheetオブジェクト
+'    Dim treatment_sheet_last_row As Long          '処理データシートの最終行
+'
+'    Dim histry_data_sheet_name As String            '履歴管理表データシートの名前
+'    Dim histry_data_sheet As Worksheet              '履歴管理表データシートのWorksheetオブジェクト
+'    Dim histry_data_sheet_last_row As Long          '履歴管理表データシートの最終行
+'
+'    Dim source_sheet_rows As Long                 '読み込むデータの入っているシートの行数
+'    Dim source_sheet_clumns As Long               '読み込むデータの入っているシートの列数
+'
+    
+'    Dim processed_data_last_rows As Long
+'    Dim processed_data_last_clumns As Long
+'
+    
+'    histry_data_sheet_name = SHEET3_NAME
+'
+'    Set histry_data_sheet = ThisWorkbook.Worksheets(histry_data_sheet_name)
+'
+'    object_information_sheet_name = SHEET1_NAME
+'
+'    Set object_information_sheet = ThisWorkbook.Worksheets(object_information_sheet_name)
+
+'    treatment_sheet_name = SHEET2_NAME
+'
+'    Set treatment_sheet = ThisWorkbook.Worksheets(treatment_sheet_name)
+'
+    Dim source_sheet_name As String               '読み込むデータの入っているExcelのファイル名
+    source_sheet_name = get_file_name(DEFAULT_FOLDER)  'ファイルダイアログを表示して開くファイルの名称を取得。
+
+    If source_sheet_name = "" Then
+    
+        Exit Sub
+    
+    End If
+    
+    Dim data As Variant
+    data = load_source_data(source_sheet_name)
+     
+    Dim processed_data As Variant
+    processed_data = data_processing(data)
+    
+'    '履歴管理表データシートの最終行を取得
+'    histry_data_sheet_last_row = get_last_row(histry_data_sheet, SOTOYOUKI_NUMBAER)
+'
+'    processed_data_last_rows = UBound(processed_data, 1)
+'    processed_data_last_clumns = UBound(processed_data, 2)
+'
+'    '配列に格納されたデータを履歴管理表データシートに入力する｡
+'    histry_data_sheet.Range("A" & histry_data_sheet_last_row + 1).Resize(processed_data_last_rows, processed_data_last_clumns).Value = processed_data
+    Dim left_array As Variant
+    left_array = SplitArrayLeft(processed_data, SPRIT_ROW)
+    
+    Dim right_array As Variant
+    right_array = SplitArrayRight(processed_data, SPRIT_ROW)
+
+'
+'    '受入物情報データシートの最終行を取得
+'    object_information_sheet_last_row = get_last_row(object_information_sheet, SOTOYOUKI_NUMBAER)
+'
+'    source_sheet_rows = UBound(left_array, 1)
+'    source_sheet_clumns = UBound(left_array, 2)
+'
+'    '配列に格納されたデータを受入物情報データシートに入力する｡
+'    object_information_sheet.Range("A" & object_information_sheet_last_row + 1).Resize(source_sheet_rows, source_sheet_clumns).Value = left_array
+'
+'    '処理データシートの最終行を取得
+'     treatment_sheet_last_row = get_last_row(treatment_sheet, 1)
+'
+'    source_sheet_rows = UBound(right_array, 1)
+'    source_sheet_clumns = UBound(right_array, 2)
+'
+'    '配列に格納されたデータを処理データシートに入力する｡
+'    treatment_sheet.Range("A" & treatment_sheet_last_row + 1).Resize(source_sheet_rows, source_sheet_clumns).Value = right_array
+
+End Sub
+
+Function get_last_row(ByVal sht As Worksheet, inspect_row As Long) As Long
+'***************************************************
+'概要：最終行を取得する関数
+'***************************************************
+    Dim xlLastRow As Long
+    Dim LastRow As Long         '最終行
+   
+    xlLastRow = sht.Cells(Rows.Count, 1).Row  'Excelの最終行
+    get_last_row = sht.Cells(xlLastRow, inspect_row).End(xlUp).Row  'シートの最終行から遡って値の入っている行を取得
+
+End Function
+
+Function get_file_name(DEFAULT_FOLDER As String) As String
+'-----------------------------------------------------------------
+'概要：ファイルダイアログを表示して開くファイルの名称を取得する関数。
+'引数：DEFAULT_FOLDER　最初に開くフォルダ名
+'----------------------------------------------------------------
+    
+    With Application.FileDialog(msoFileDialogFilePicker)
+        '「ファイルの種類」をクリア
+        .Filters.Clear
+        '「ファイルの種類」を登録
+        .Filters.Add "Excelブック", "*.xls; *.xlsx; *.xlsm", 1
+        .InitialFileName = DEFAULT_FOLDER '最初に開くフォルダを指定
+        If .Show = 0 Then
+            MsgBox "キャンセルしました。"
+            get_file_name = ""
+            Exit Function
+        End If
+            get_file_name = Dir(.SelectedItems(1)) 'ファイル名だけ抜き出す。
+    End With
+    
+End Function
+
+Function load_source_data(source_data_sheet_name As String) As Variant
+'-------------------------------------------------------------------------------
+'受入物履歴管理表データのカテゴリ1シートとカテゴリ２シートの内容をそれぞれ配列に
+'読み込み、縦に結合して一つの配列にする。
+'
+'-------------------------------------------------------------------------------
+'    Dim source_data_sheet_rows As Long      '読み込むデータの入っているシートのの読み込む行数
+'    Dim source_data_sheet_clumns As Long    '読み込むデータの入っているシートの読み込む列数
+'    Dim i As Long '
+     
+    Dim source_data_book As Workbook
+    Set source_data_book = Workbooks.Open(source_data_sheet_name, ReadOnly:=True)
+    
+    Dim sheet_names As Variant
+    sheet_names = Array(HISTORY_SHEET_NUMBER1, HISTORY_SHEET_NUMBER2)
+
+    Dim sheet_name As Variant
+    For Each sheet_name In sheet_names
+        
+       Dim source_data_sheet As Worksheet
+       Set source_data_sheet = source_data_book.Worksheets(sheet_name)
+ 
+        'ソースファイルの最終行取得
+       Dim source_data_sheet_last_row As Long  '読み込むデータの入っているシートの最終行
+       source_data_sheet_last_row = get_last_row(source_data_sheet, SOTOYOUKI_NUMBAER)
+    
+        ' ソースファイルのデータのある範囲を指定して配列に格納する。
+        With source_data_sheet
+            If sheet_name = sheet_names(0) Then
+                
+               Dim data1 As Variant
+               data1 = .Range(.Cells(HISTORY_SHEET_FIRST_ROW, 1), _
+                       .Cells(source_data_sheet_last_row, HISTORY_SHEET_CLUMNS)).Value
+            
+            Else
+            
+                Dim data2 As Variant
+                data2 = .Range(.Cells(HISTORY_SHEET_FIRST_ROW, 1), _
+                       .Cells(source_data_sheet_last_row, HISTORY_SHEET_CLUMNS)).Value
+                
+            End If
+            
+        End With
+ 
+    Next sheet_name
+ 
+    Dim merge_data As Variant
+    merge_data = MergeArray(data1, data2)
+    
+    source_data_book.Close SaveChanges:=False
+    
+    load_source_data = merge_data
+
+End Function
+
+Public Function MergeArray(arr1 As Variant, arr2 As Variant) As Variant
+'---------------------------------------------------------------------------------
+'「二次元配列を行方向に結合(マージ)する」処理をパーツ化する【ExcelVBA】
+'https://vba-create.jp/vba-array-merge-row-two-dimensions/
+'----------------------------------------------------------------------------------
+    '■結合(マージ)後の配列サイズ
+    '■■行方向(縦)に結合、列方向(横)は二次元配列の大きい方に合わせる。
+    Dim ROW_NEW As Long
+    ROW_NEW = UBound(arr1, 1) + UBound(arr2, 1)
+    
+    Dim COL_NEW As Long
+    COL_NEW = max_column(UBound(arr1, 2), UBound(arr2, 2))
+'    COL_NEW = Application.WorksheetFunction.Max(UBound(arr1, 2), UBound(arr2, 2))
+    
+    '■結合(マージ)後の二次元配列
+    Dim newArr As Variant
+    ReDim newArr(1 To ROW_NEW, 1 To COL_NEW)
+     
+    '■二次元配列を結合処理
+    Dim i As Long
+    Dim j As Long
+    For i = 1 To ROW_NEW
+        If i <= UBound(arr1, 1) Then
+            For j = 1 To COL_NEW
+                If j <= UBound(arr1, 2) Then
+                    newArr(i, j) = arr1(i, j)
+                Else
+                    newArr(i, j) = Empty
+                End If
+            Next j
+        Else
+            For j = 1 To COL_NEW
+                If j <= UBound(arr2, 2) Then
+                    newArr(i, j) = arr2(i - UBound(arr1, 1), j)
+                Else
+                    newArr(i, j) = Empty
+                End If
+            Next j
+        End If
+    Next i
+     
+    MergeArray = newArr
+     
+End Function
+
+Function max_column(A As Long, B As Long) As Long
+    If A >= B Then
+        max_column = A
+    Else
+        max_column = B
+    End If
+    
+End Function
+
+Function SplitArrayLeft(OriginalArray As Variant, SplitColumn As Long) As Variant
+'-------------------------------------------------------------------------------
+'配列からSplitColumnで与えられた列より左側を取り出す
+'引数：
+'　OriginalArray：元の配列
+'　SplitColumn：分割する列の位置（この列を含まない）
+'-------------------------------------------------------------------------------
+    Dim LeftArray() As Variant
+    ReDim LeftArray(1 To UBound(OriginalArray, 1), 1 To SplitColumn - 1)
+    
+    Dim i As Long
+    Dim j As Long
+    For i = 1 To UBound(OriginalArray, 1)
+        For j = 1 To UBound(OriginalArray, 2)
+             If j < SplitColumn Then
+               LeftArray(i, j) = OriginalArray(i, j)
+           End If
+        Next j
+    Next i
+    
+    SplitArrayLeft = LeftArray
+    
+End Function
+
+Function SplitArrayRight(OriginalArray As Variant, SplitColumn As Long) As Variant
+'-------------------------------------------------------------------------------
+'配列からSplitColumnで与えられた列を含んだ右側を取り出す
+'引数：
+'　OriginalArray：元の配列
+'　SplitColumn：分割する列の位置（この列を含む）
+'-------------------------------------------------------------------------------
+    Dim RightArray() As Variant
+
+    ReDim RightArray(1 To UBound(OriginalArray, 1), 1 To UBound(OriginalArray, 2) - SplitColumn + 1)
+    
+    Dim i As Long
+    Dim j As Long
+    For i = 1 To UBound(OriginalArray, 1)
+        For j = 1 To UBound(OriginalArray, 2)
+            If j >= SplitColumn Then
+               RightArray(i, (j - SplitColumn) + 1) = OriginalArray(i, j)
+            End If
+        Next j
+    Next i
+    
+    SplitArrayRight = RightArray
+
+End Function
+
+Function data_processing(input_data As Variant) As Variant
+    Dim corrent_row As Long
+'    Dim j As Long
+
+    For corrent_row = 1 To UBound(input_data, 1)
+    
+        If input_data(corrent_row, UCHIYOUKI_NUMBER2) = "" And Not (input_data(corrent_row, PROCESSING_DATE) = "") Then
+        
+            input_data(corrent_row, UCHIYOUKI_NUMBER2) = input_data(corrent_row, UCHIYOUKI_NUMBER1)
+            input_data(corrent_row, CONTENT2) = input_data(corrent_row, CONTENT1)
+            input_data(corrent_row, WEIGHT2) = input_data(corrent_row, WEIGHT1)
+            input_data(corrent_row, DOSE2) = input_data(corrent_row, DOSE1)
+        
+'            Debug.Print input_data(corrent_row, UCHIYOUKI_NUMBER2), input_data(corrent_row, CONTENT2), input_data(corrent_row, WEIGHT2), input_data(corrent_row, DOSE2)
+           
+        End If
+ 
+    Next corrent_row
+
+    data_processing = input_data
+    
+End Function
+
