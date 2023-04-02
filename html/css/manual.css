@@ -1,0 +1,32 @@
+.manual {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: white;
+  color: #333;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+.manual th,
+.manual td {
+  padding: 8px;
+  text-align: left;
+}
+
+.manual th {
+  background-color: #f2f2f2;
+  color: #333;
+  font-weight: bold;
+}
+
+.manual tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.manual tr:hover {
+  background-color: #e6e6e6;
+}
+
