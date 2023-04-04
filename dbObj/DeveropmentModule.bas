@@ -5,8 +5,6 @@ Option Explicit
 'テーブルやカラム情報、オブジェクトの書き出しや読み込みのためのコード集。
 '---------------------------------------------------------------------------
 
-
-
 Public Sub ExportModules()
 '---------------------------------------------------------------------------
 'Access帳票開発でレポート、クエリとかを複数人で触るための手順。
@@ -25,9 +23,24 @@ ExportObjectType acQuery, currentDat.AllQueries, outputDir, ".qry"
 ExportObjectType acForm, currentProj.AllForms, outputDir, ".frm"
 ExportObjectType acReport, currentProj.AllReports, outputDir, ".rpt"
 ExportObjectType acMacro, currentProj.AllMacros, outputDir, ".mcr"
-ExportObjectType acModule, currentProj.AllModules, outputDir, ".bas"
+ExportObjectType acModule, currentProj.allModules, outputDir, ".bas"
+ExportObjectType acClassModule, GetClassModules(currentProj.allModules), outputDir, ".cls"
 
 End Sub
+
+Private Function GetClassModules(Modules As Object) As Collection
+    Dim col As New Collection
+    Dim acMod As Object
+    
+    For Each acMod In Modules
+        If acMod.Type = acClassModule Then
+            col.Add acMod
+        End If
+    Next acMod
+    
+    Set GetClassModules = col
+End Function
+
 
 'ファイル名のディレクトリ部分を返す
 Private Function GetDir(FileName As String) As String
@@ -43,69 +56,75 @@ End Function
 
 '特定の種類のオブジェクトをエクスポートする
 Private Sub ExportObjectType(ObjType As Integer, _
-ObjCollection As Variant, Path As String, Ext As String)
+    ObjCollection As Variant, Path As String, Ext As String)
 
-Dim obj As Variant
-Dim filePath As String
+    Dim obj As Variant
+    Dim filePath As String
 
-For Each obj In ObjCollection
-    filePath = Path & "\dbObj\" & obj.Name & Ext
-    SaveAsText ObjType, obj.Name, filePath
-    Debug.Print "Save " & obj.Name
-Next
+    For Each obj In ObjCollection
+        If ObjType = acClassModule Then
+            filePath = Path & "\dbObj\" & obj.Name & ".cls"
+            Application.SaveAsText acModule, obj.Name, filePath
+            Debug.Print "Save " & obj.Name
+        Else
+            filePath = Path & "\dbObj\" & obj.Name & Ext
+            Application.SaveAsText ObjType, obj.Name, filePath
+            Debug.Print "Save " & obj.Name
+        End If
+    Next
 
 End Sub
 
-'import objects
 Public Sub ImportModules()
-Dim inputDir As String
-Dim currentDat As Object
-Dim currentProj As Object
-
-inputDir = GetDir(CurrentDb.Name) & "\dbObj\"
-
-Set currentDat = Application.CurrentData
-Set currentProj = Application.CurrentProject
-
-ImportObjectType (inputDir)
-
+'----------------------------------
+'書き出したモジュールのインポート
+'----------------------------------
+    Dim inputDir As String
+    Dim currentDat As Object
+    Dim currentProj As Object
+    inputDir = GetDir(CurrentDb.Name) & "\dbObj\" 'あらかじめ、データベースと同じフォルダに「dbObj」フォルダを作成しておく
+    
+    Set currentDat = Application.CurrentData
+    Set currentProj = Application.CurrentProject
+    
+    ImportObjectType inputDir, currentProj
 End Sub
 
 'import all objects in a folder
-Private Sub ImportObjectType(Path As String)
+Private Sub ImportObjectType(Path As String, currentProj As Object)
+    Dim fso As Object
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    Dim folder As Object
+    Set folder = fso.GetFolder(Path)
+    
+    Dim myFile, objectName, objectType
+    Dim moduleType As AcModuleType
+    
+    For Each myFile In folder.Files
+        objectType = fso.GetExtensionName(myFile.Name)
+        objectName = fso.GetBaseName(myFile.Name)
+    
+        If (objectType = "frm") Then
+            Application.LoadFromText acForm, objectName, myFile.Path
+        ElseIf (objectType = "bas") Then
+            Application.LoadFromText acModule, objectName, myFile.Path
+        ElseIf (objectType = "mcr") Then
+            Application.LoadFromText acMacro, objectName, myFile.Path
+        ElseIf (objectType = "rpt") Then
+            Application.LoadFromText acReport, objectName, myFile.Path
+        ElseIf (objectType = "qry") Then
+            Application.LoadFromText acQuery, objectName, myFile.Path
+        ElseIf (objectType = "cls") Then
+            ' クラスモジュールの場合は、別途処理が必要
+            Set currentProj = Application.VBE.VBProjects(currentProj.Name)
+            moduleType = acClassModule
+            currentProj.VBComponents.Import myFile.Path
+        End If
+    Next
 
-Dim currentDat As Object
-Dim currentProj As Object
-
-Dim fso
-Set fso = CreateObject("Scripting.FileSystemObject")
-
-Dim folder As Object
-Dim myFile, objectname, objecttype
-
-Set folder = CreateObject _
-("Scripting.FileSystemObject").GetFolder(Path)
-
-Dim oApplication
-
-For Each myFile In folder.Files
-    objecttype = fso.GetExtensionName(myFile.Name)
-    objectname = fso.GetBaseName(myFile.Name)
-
-    If (objecttype = "frm") Then
-        Application.LoadFromText acForm, objectname, myFile.Path
-    ElseIf (objecttype = "bas") Then
-        Application.LoadFromText acModule, objectname, myFile.Path
-    ElseIf (objecttype = "mcr") Then
-        Application.LoadFromText acMacro, objectname, myFile.Path
-    ElseIf (objecttype = "rpt") Then
-        Application.LoadFromText acReport, objectname, myFile.Path
-    ElseIf (objecttype = "qry") Then
-        Application.LoadFromText acQuery, objectname, myFile.Path
-    End If
-
-Next
 End Sub
+
 Sub ExportTablesAndColumns()
 '-------------------------------------------------------------------------
 'adoのOpenSchemaメソッドを用いて外部のデータベースのテーブルの一覧を取得し

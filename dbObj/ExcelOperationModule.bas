@@ -65,7 +65,7 @@ Function get_last_row(ByVal sht As Object, inspect_row As Long) As Long
     Dim lastRow As Long         '最終行
    
     xlLastRow = sht.Cells(sht.Rows.Count, 1).row  'Excelシートの最終行
-    get_last_row = sht.Cells(xlLastRow, inspect_row).End(xLUp).row  'シートの最終行から遡って値の入っている行を取得
+    get_last_row = sht.Cells(xlLastRow, inspect_row).end(xLUp).row  'シートの最終行から遡って値の入っている行を取得
 
 End Function
 
