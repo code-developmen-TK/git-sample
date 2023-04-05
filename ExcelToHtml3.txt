@@ -1,0 +1,118 @@
+Option Explicit
+
+Sub ボタン1_Click()
+'------------------------------------------------------------------
+'Excelの全シートをHTMLのテーブルに変換してファイルに書き出す
+'--------------------------------------------------------------------
+    Dim Stream As Object
+    Set Stream = CreateObject("ADODB.Stream")
+    Stream.Charset = "utf-8"
+    Stream.Type = 2 'text
+    
+    'Select folder to save file
+    With Application.FileDialog(msoFileDialogFolderPicker)
+        .Title = "Select a Folder to Save HTML Table"
+        .AllowMultiSelect = False
+        If .Show <> -1 Then Exit Sub
+        Dim FolderPath As String
+        FolderPath = .SelectedItems(1) & "\"
+    End With
+    
+    Dim FileName As String
+    FileName = "manual.html"
+
+    Dim html As String
+    html = html & "<!DOCTYPE html>" & vbNewLine
+    html = html & "<html lang=""ja"">" & vbNewLine
+    html = html & "<head>" & vbNewLine
+    html = html & "<meta charset=""UTF-8"">" & vbNewLine
+    html = html & "<meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">" & vbNewLine
+    html = html & "<link rel=""stylesheet"" href=""./css/reset.css"">" & vbNewLine
+    html = html & "<link rel=""stylesheet"" type=""text/css"" href=""./css/manual.css"">" & vbNewLine
+    html = html & "<title>マニュアル</title>" & vbNewLine
+    html = html & "</head>" & vbNewLine
+    html = html & "<body>" & vbNewLine
+    html = html & "<h1>環境技術開発課　廃棄物処理関係作業マニュアル</h1>" & vbNewLine
+    Dim wb As Workbook
+    Set wb = ActiveWorkbook
+    
+    Dim ws As Worksheet
+    For Each ws In wb.Worksheets 'すべてのシートを書き出す
+        
+        'シートにデータが入力されているなら処理を実行する。
+        If WorksheetFunction.CountA(ws.Cells) <> 0 Then
+        
+            '表の範囲を取得
+            Dim rng As Range
+            Set rng = ws.UsedRange
+            
+            '表の範囲を配列に変換
+            Dim tbl As Variant
+            tbl = rng.Value
+            
+            'テーブルのHTMLを作成
+            html = html & "<table class=""manual"">" & vbNewLine
+            html = html & "<caption>" & ws.Name & "</caption>" & vbNewLine
+            html = html & "<thead>"
+            html = html & "<tr>"
+
+            'テーブルヘッダーの作成
+            'タイトル行　No. 文書コード  文書名称    承認日  備考
+            Dim j As Long
+            For j = 1 To rng.Columns.Count
+                    html = html & "<th>" & tbl(1, j) & "</th>"
+            Next j
+            
+            html = html & "</tr>" & vbNewLine
+            html = html & "</thead>"
+            html = html & "<tbody>" & vbNewLine
+
+            'テーブルの内容の作成
+            Dim i As Long
+            For i = 2 To rng.Rows.Count
+                html = html & "<tr>"
+                For j = 1 To rng.Columns.Count
+                    If j = 3 Then '文書名称のところはリンクを作成
+                        Const cst番号 As Long = 1 'No.
+                        Const cst文書コード As Long = 2
+                        Const cst文書名称 As Long = 3
+                        Const cst承認日 As Long = 4
+                        Const cst備考 As Long = 5
+                        
+                        Dim FolderName As String
+                        FolderName = ws.Name
+                        
+                        html = html & "<td><a class=""rink"" href=""./manual/" & _
+                               FolderName & "/" & tbl(i, cst文書コード) & ".pdf"">" & tbl(i, cst文書名称)
+
+                    Else
+                    
+                        html = html & "<td>" & tbl(i, j) & "</td>"
+                        
+                    End If
+                    
+                    
+                Next j
+                html = html & "</tr>" & vbNewLine
+            
+            Next i
+            html = html & "</tbody>" & vbNewLine
+            html = html & "</table>" & vbNewLine
+            html = html & "<br>" & vbNewLine
+
+            
+        End If
+        
+    Next ws
+    
+    html = html & "</body>" & vbNewLine
+    html = html & "</html>"
+    
+    'HTMLファイルの書き出し
+    Stream.Open
+    Stream.WriteText html
+    Stream.SaveToFile FolderPath & FileName, 2 '上書き
+
+    Stream.Close
+
+End Sub
