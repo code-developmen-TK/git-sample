@@ -1,0 +1,249 @@
+@charset "UTF-8";
+
+* {margin: 0;} /*全体のマージンを０にしてかっちりとレイアウトする。 */
+/* * {font-family: 'ＭＳ Ｐゴシック','Osaka',sans-serif;} */
+
+
+body {
+	margin: 0;
+	padding: 0;
+}
+
+h1 {
+	font-size: medium;
+	margin: 0;
+	padding:0;
+}
+
+h2 {
+	font-size: medium;
+	padding: 2px;
+	color: white;
+	background-color: #386CB0;
+	
+
+}
+
+.name
+{
+	font-weight: bold;
+}
+
+#busho
+{
+	font-size: small;
+	froat: right;
+}
+
+
+table.menu {
+	
+	width: 150px;
+	border: 1px solid #386CB0;
+	margin-top: 2px;
+	border-collapse: collapse;
+	background-color: transparent;
+}
+
+th.menu {
+	text-align: center;
+	background-color: #386CB0;
+	color: white;
+	border-bottom: 1px solid #386CB0;
+}
+
+ul {
+	font-size: small;
+	padding: 0;
+	margin: 0 0 0 1.5em;
+	list-style: url(../image/arrow.gif);
+}
+
+a {
+	color: black;
+	text-decoration: none;
+
+}
+
+a.rink {
+	color: red;
+	text-decoration: underline
+}
+
+
+a:hover {
+	color: red;
+	text-decoration: underline;
+
+}
+
+
+#container {
+	margin: 0;
+	padding: 0;
+	text-align: left;
+	color: #000000;
+	background-color: white;
+	width: 804px;
+}
+
+#header {
+	padding-top: 5px;
+	color: #000000;
+	background: #ffffff;
+	width: 804px;
+
+
+}
+
+#logo {
+	float: left;
+
+}
+
+#serch {
+	float: right;
+	margin-top: 33px;	
+
+	
+}
+
+#counter {
+	color: white;
+	float: center;
+	width: 804px;
+	height: 4px;
+	background-color: #5175C9;
+}
+
+
+/********************横メニュー********************/
+
+#menu
+{
+background-color: #eeeeee;	
+border-bottom: 1px solid black;
+padding: 2px 0 ;
+}
+
+#navcontainer ul
+{
+margin-left: 0;
+background-color: #eeeeee;
+
+color: White;
+
+width: 804px;
+/* font-family: arial, helvetica, sans-serif; */
+}
+
+#navcontainer ul li { display: inline; }
+
+#navcontainer ul li a
+{
+padding: 0.2em 1em;
+background-color: #eeeeee;
+color: black;
+text-decoration: none;
+/* float: left; */
+border-right: 1px solid #bbbbbb;
+}
+
+#navcontainer ul li a:hover
+{
+background-color: #cccccc;
+color: black;
+}
+
+#current
+{
+background-color: #cccccc;
+color: black;
+}
+
+#active a:link
+{
+background-color: #cccccc;
+color: black;
+}
+
+/********************横メニュー終了******************/
+
+#home {
+    width: 650px;
+    float: right;
+    color: #000000;
+    background: transparent;
+}
+
+#scroolmoji {
+    height: 5em;
+		margin: 2px 0;
+		
+    border-left: 5px solid #5175C9;
+}
+
+#mainmenu {
+    width: 150px;
+    float: left;
+    background: transparent;
+}
+
+#maincontent {
+	width: 495px;
+	float: left;
+	background: transparent;
+}
+
+#subcontent {
+	width: 150px;
+	float: right;
+	background: transparent;
+}
+
+
+#footer {
+	margin-top: 2px;
+	padding: 0.2em 1em; 
+	width: 800px;
+	clear: both;
+	border-top: 1px solid black;
+	background: transparent;
+}
+
+strong.hizuke {
+	color:blue;
+}
+
+strong.caution {
+	color:green;
+}
+
+#navlist {
+  display: flex;
+	align-items: center;
+  list-style: none;
+  padding: 0;
+}
+
+#navlist li {
+  margin: 2px,20px;
+}
+
+#navlist li:last-child {
+  margin-right: 0;
+}
+
+#navlist li a {
+  display: block;
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  padding: 5px 10px;
+  /* border-radius: 5px; */
+}
+
+#navlist li#active a {
+  color: #fff;
+  background-color: #4d4c4c;
+}
