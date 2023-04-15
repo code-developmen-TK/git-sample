@@ -1,0 +1,124 @@
+body {
+   font-family: "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W3", メイリオ, Meiryo, "ＭＳ Ｐゴシック", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background-color: #ffffff;
+  min-height: 100vh;
+  display: grid;
+  grid-template:
+  "header" auto
+  "center" 1fr
+  "footer" auto
+  /1fr;
+}
+
+header {
+  grid-area: header;
+  width: 100%;
+  padding: 30px 4% 10px;
+  background-color: #f2f2f2;
+  /* position: fixed; */
+  top: 0;
+  display: flex;
+  align-items: center;
+}
+
+h1 {
+  margin: 0; padding: 0;
+  font-size: 20px;
+}
+
+a {	
+  text-decoration: none;
+  color: #4b4b4b;
+}
+
+.main-nav {
+  margin: 0 0 0 auto;
+}
+
+.main-nav ul {
+  list-style: none;
+  margin: 0;
+  display: flex;
+}
+
+.main-nav li {
+  margin: 0 0 0 15px;
+  font-size: 14px;
+}
+
+.main-nav a {	
+  text-decoration: none;
+  color: #4b4b4b;
+  transition: all 0.3s ease-in-out;
+}
+
+/* ナビゲーションリンクにマウスが乗ったときのスタイル */
+.main-nav a:hover {
+  color: #000;
+}
+
+main {
+  display: grid;
+  grid-area: center;
+  margin: 0 auto;
+  width: 80%;
+  height: auto;
+  padding: 20px 0;
+}
+
+footer {
+  grid-area: footer;
+}
+
+.footer {
+  position: relative;
+  margin-top: 40px;
+  color: #fff;
+  padding: 40px 20px;
+  background: #333;
+}
+
+.footer a {
+  text-decoration: none;
+  color: #fff;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
+
+.manual {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 800px;
+  margin: 20px auto;
+  background-color: white;
+  color: #333;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  overflow-x: auto;
+}
+.manual caption{
+  font-size: 18px;
+  font-weight: bold;
+  margin: 10px auto;
+}
+.manual th,
+.manual td {
+  padding: 8px;
+  text-align: left;
+}
+
+.manual th {
+  background-color: #f2f2f2;
+  color: #333;
+  font-weight: bold;
+}
+
+.manual tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.manual tr:hover {
+  background-color: #e6e6e6;
+}
