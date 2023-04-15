@@ -1,16 +1,11 @@
 Option Explicit
 
+
 Sub ボタン1_Click()
-    Dim wb As Workbook
-    Dim ws As Worksheet
-    Dim rng As Range
-    Dim tbl As Variant
-    Dim html As String
-    Dim i As Long, j As Long
-    Dim FolderPath As String
-    Dim FileName As String
+'------------------------------------------------------------------
+'Excelの全シートをHTMLのテーブルに変換してファイルに書き出す
+'--------------------------------------------------------------------
     Dim Stream As Object
-    
     Set Stream = CreateObject("ADODB.Stream")
     Stream.Charset = "utf-8"
     Stream.Type = 2 'text
@@ -20,72 +15,108 @@ Sub ボタン1_Click()
         .Title = "Select a Folder to Save HTML Table"
         .AllowMultiSelect = False
         If .Show <> -1 Then Exit Sub
+        Dim FolderPath As String
         FolderPath = .SelectedItems(1) & "\"
     End With
     
-'    'Input file name
-'    FileName = InputBox("Enter File Name", "Save As")
-'    If FileName = "" Then Exit Sub
+    Dim FileName As String
     FileName = "manual.html"
-'    If InStr(FileName, ".") = 0 Then FileName = FileName & ".html"
-    
-'    FolderPath = Left(FolderPath, InStrRev(FolderPath, "\") - 1)
 
+    Dim html As String
     html = html & "<!DOCTYPE html>" & vbNewLine
     html = html & "<html lang=""ja"">" & vbNewLine
     html = html & "<head>" & vbNewLine
     html = html & "<meta charset=""UTF-8"">" & vbNewLine
     html = html & "<meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">" & vbNewLine
     html = html & "<link rel=""stylesheet"" href=""./css/reset.css"">" & vbNewLine
-    html = html & "<link rel=""stylesheet"" type=""text/css"" href=""./css/manual.css"">" & vbNewLine
+    html = html & "<link rel=""stylesheet"" type=""text/css"" href=""./css/style.css"">" & vbNewLine
     html = html & "<title>マニュアル</title>" & vbNewLine
     html = html & "</head>" & vbNewLine
     html = html & "<body>" & vbNewLine
+    html = html & "<header>" & vbNewLine
+    html = html & "<h1>〇〇課　△△関係作業マニュアル</h1>" & vbNewLine
+    html = html & "<nav class=""main-nav"">" & vbNewLine
+    html = html & " <ul>" & vbNewLine
+    html = html & "<li><a href=""#"">ABOUT</a></li>" & vbNewLine
+    html = html & "<li><a href=""#"">SERVICE</a></li>" & vbNewLine
+    html = html & "<li><a href=""#"">COMPANY</a></li>" & vbNewLine
+    html = html & "<li><a href=""#"">CONTACT</a></li>" & vbNewLine
+    html = html & "</ul>" & vbNewLine
+    html = html & "</nav>" & vbNewLine
+    html = html & "</header>" & vbNewLine
+    html = html & "<main>" & vbNewLine
+    html = html & vbNewLine
     
+    Dim wb As Workbook
     Set wb = ActiveWorkbook
-    For Each ws In wb.Worksheets 'loop through all sheets
+    
+    Dim ws As Worksheet
+    For Each ws In wb.Worksheets 'すべてのシートを書き出す
         
-        'check if sheet has data
+        'シートにデータが入力されているなら処理を実行する。
         If WorksheetFunction.CountA(ws.Cells) <> 0 Then
         
-            'get table range
+            '表の範囲を取得
+            Dim rng As Range
             Set rng = ws.UsedRange
             
-            'convert table to array
+            '表の範囲を配列に変換
+            Dim tbl As Variant
             tbl = rng.Value
             
-            'build html table
+            'テーブルのHTMLを作成
             html = html & "<table class=""manual"">" & vbNewLine
             html = html & "<caption>" & ws.Name & "</caption>" & vbNewLine
+            html = html & "<thead>"
             html = html & "<tr>"
-            
-            For j = 1 To rng.Columns.Count
-                html = html & "<th>" & tbl(1, j) & "</th>"
-'                            Debug.Print html
 
+            'テーブルヘッダーの作成
+            'タイトル行　No. 文書コード  文書名称    承認日  備考
+            Dim j As Long
+            For j = 1 To rng.Columns.Count
+                    html = html & "<th>" & tbl(1, j) & "</th>"
             Next j
-           
             
             html = html & "</tr>" & vbNewLine
-'            Debug.Print html
+            html = html & "</thead>"
+            html = html & "<tbody>" & vbNewLine
+
+            'テーブルの内容の作成
+            Dim i As Long
             For i = 2 To rng.Rows.Count
                 html = html & "<tr>"
                 For j = 1 To rng.Columns.Count
-                    html = html & "<td>" & tbl(i, j) & "</td>"
+                    If j = 3 Then '文書名称のところはリンクを作成
+                        Const cst番号 As Long = 1 'No.
+                        Const cst文書コード As Long = 2
+                        Const cst文書名称 As Long = 3
+                        Const cst承認日 As Long = 4
+                        Const cst備考 As Long = 5
+                        
+                        Dim FolderName As String
+                        FolderName = ws.Name
+                        
+                        html = html & "<td><a class=""rink"" href=""./manual/" & _
+                               FolderName & "/" & tbl(i, cst文書コード) & ".pdf"">" & tbl(i, cst文書名称)
+
+                    Else
+                    
+                        html = html & "<td>" & tbl(i, j) & "</td>"
+                        
+                    End If
+                    
+                    
                 Next j
-'                           Debug.Print html
                 html = html & "</tr>" & vbNewLine
             
             Next i
-            
+            html = html & "</tbody>" & vbNewLine
             html = html & "</table>" & vbNewLine
-            html = html & "<br>" & vbNewLine
+            html = html & "</main>" & vbNewLine
+            html = html & "<footer class=""footer"">" & vbNewLine
+            html = html & " <p class=""copyright"">Copyright AAA,Inc. All rights reserved.</p>""" & vbNewLine
+            html = html & "</footer>" & vbNewLine
 
-'
-'            'write html to file
-'            Open FolderPath & FileName For Append As #1
-'            Print #1, html
-'            Close #1
             
         End If
         
@@ -93,293 +124,12 @@ Sub ボタン1_Click()
     
     html = html & "</body>" & vbNewLine
     html = html & "</html>"
-            
-    'write html to file
+    
+    'HTMLファイルの書き出し
     Stream.Open
     Stream.WriteText html
-'    Stream.SaveToFile FolderPath, 2 'overwrite file
-    Stream.SaveToFile FolderPath & FileName, 2 'overwrite file
-    
+    Stream.SaveToFile FolderPath & FileName, 2 '上書き
+
     Stream.Close
-
-End Sub
-
-Sub ExportToHTMLTable()
-'Stream オブジェクトを作成し、 Charset プロパティを UTF-8 に設定します。
-'Type プロパティを 2 に設定することで、ストリームをテキストモードで開きます。
-'FileDialog を使用して、ファイルを保存するフォルダを選択し、 InputBox を使用
-'してファイル名を入力します。ファイル名が空白の場合、処理を終了します。
-'ファイル名に拡張子が含まれていない場合、 ".html" を追加します。
-'For Each ループを使用して、ブック内のすべてのシートにアクセスします。
-'CountA 関数を使用して、シートにデータが含まれているかどうかを確認します。
-'UsedRange プロパティを使用して、表の範囲を取得し、配列に変換します。
-'そして、HTMLのテーブルを構築し、ADO Streamオブジェクトを使用して、HTMLをファイルに書き込みます。
-'HTMLファイルの先頭には、エンコーディングが UTF-8 であることを示す XML 宣言があります。
-'DOCTYPE 宣言も追加され、HTML ページが正しく解釈されるようになります。
-    Dim wb As Workbook
-    Dim ws As Worksheet
-    Dim rng As Range
-    Dim tbl As Variant
-    Dim html As String
-    Dim i As Long, j As Long
-    Dim FolderPath As String
-    Dim FileName As String
-    Dim Stream As Object
-    
-    Set Stream = CreateObject("ADODB.Stream")
-    Stream.Charset = "utf-8"
-    Stream.Type = 2 'text
-    
-    'Select folder to save file
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        .Title = "Select a Folder to Save HTML Table"
-        .AllowMultiSelect = False
-        If .Show <> -1 Then Exit Sub
-        FolderPath = .SelectedItems(1) & "\"
-    End With
-    
-    'Input file name
-    FileName = InputBox("Enter File Name", "Save As")
-    If FileName = "" Then Exit Sub
-    If InStr(FileName, ".") = 0 Then FileName = FileName & ".html"
-    
-    Set wb = ActiveWorkbook
-    For Each ws In wb.Worksheets 'loop through all sheets
-        
-        'check if sheet has data
-        If WorksheetFunction.CountA(ws.Cells) <> 0 Then
-        
-            'get table range
-            Set rng = ws.UsedRange
-            
-            'convert table to array
-            tbl = rng.Value
-            
-            'build html table
-            html = "<table>"
-            html = html & "<caption>" & ws.Name & "</caption>"
-            html = html & "<tr>"
-            For j = 1 To rng.Columns.Count
-                html = html & "<th>" & tbl(1, j) & "</th>"
-            Next j
-            html = html & "</tr>"
-            For i = 2 To rng.Rows.Count
-                html = html & "<tr>"
-                For j = 1 To rng.Columns.Count
-                    html = html & "<td>" & tbl(i, j) & "</td>"
-                Next j
-                html = html & "</tr>"
-            Next i
-            html = html & "</table>"
-            
-            'write html to file
-            Stream.Open
-            Stream.WriteText "<?xml version=""1.0"" encoding=""UTF-8""?>" & vbCrLf
-            Stream.WriteText "<!DOCTYPE html>" & vbCrLf
-            Stream.WriteText "<html>" & vbCrLf
-            Stream.WriteText "<head>" & vbCrLf
-            Stream.WriteText "<meta charset=""UTF-8"">" & vbCrLf
-            Stream.WriteText "<title>" & ws.Name & "</title>" & vbCrLf
-            Stream.WriteText "</head>" & vbCrLf
-            Stream.WriteText "<body>" & vbCrLf
-            Stream.WriteText html
-            Stream.WriteText "</body>" & vbCrLf
-            Stream.WriteText "</html>"
-            Stream.SaveToFile FolderPath & FileName, 2 'overwrite file
-            Stream.Close
-            
-        End If
-        
-    Next ws
-
-End Sub
-
-Sub GetFilesInfo()
-
-    Dim MyFolder As String
-    Dim MyFile As String
-    Dim MyExtension As String
-    Dim MySplit As Variant
-    Dim MyRow As Long
-    Dim MySheet As Worksheet
-    Dim SelectedFolder As Variant
-    
-    ' フォルダを選択
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        .Title = "フォルダを選択してください"
-        .AllowMultiSelect = False
-        If .Show <> -1 Then Exit Sub
-        SelectedFolder = .SelectedItems(1)
-    End With
-    MyFolder = SelectedFolder & "\"
-    
-    ' 新しいシートを作成
-    Set MySheet = ThisWorkbook.Sheets.Add
-    
-    ' シートの1行目にヘッダーを設定
-    MySheet.Cells(1, 1) = "No."
-    MySheet.Cells(1, 2) = "文書番号"
-    MySheet.Cells(1, 3) = "文書名称"
-    MySheet.Cells(1, 4) = "承認日（施工日）"
-    MySheet.Cells(1, 5) = "備考"
-    
-    ' フォルダ内のファイルを取得
-    MyFile = Dir(MyFolder & "*.*")
-    
-    ' ファイルを1つずつ処理
-    Do While MyFile <> ""
-        
-        ' 拡張子が ".pdf" でない場合
-        MyExtension = Right(MyFile, 4)
-        If MyExtension <> ".pdf" Then
-            
-            ' ピリオドでファイル名を分割
-            MySplit = Split(MyFile, ".")
-            
-            ' 表に情報を出力
-            MyRow = MySheet.Cells(Rows.Count, 1).End(xlUp).Row + 1
-            MySheet.Cells(MyRow, 1) = MyRow - 1
-            MySheet.Cells(MyRow, 2) = MySplit(0)
-            MySheet.Cells(MyRow, 3) = MySplit(1)
-            MySheet.Cells(MyRow, 4) = MySplit(2)
-            MySheet.Cells(MyRow, 5) = MySplit(3)
-            
-        End If
-        
-        ' 次のファイルを取得
-        MyFile = Dir
-        
-    Loop
-    
-End Sub
-
-Sub GetFilesInfo2()
-'サブフォルダ対応版
-    Dim MyFolder As String
-    Dim MyFile As String
-    Dim MyExtension As String
-    Dim MySplit As Variant
-    Dim MyRow As Long
-    Dim MySheet As Worksheet
-    Dim SelectedFolder As Variant
-    
-    ' フォルダを選択
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        .Title = "フォルダを選択してください"
-        .AllowMultiSelect = False
-        If .Show <> -1 Then Exit Sub
-        SelectedFolder = .SelectedItems(1)
-    End With
-    MyFolder = SelectedFolder & "\"
-    
-    ' 新しいシートを作成
-    Set MySheet = ThisWorkbook.Sheets.Add
-    
-    ' シートの1行目にヘッダーを設定
-    MySheet.Cells(1, 1) = "No."
-    MySheet.Cells(1, 2) = "文書番号"
-    MySheet.Cells(1, 3) = "文書名称"
-    MySheet.Cells(1, 4) = "承認日（施工日）"
-    MySheet.Cells(1, 5) = "備考"
-    
-    ' フォルダ内の全てのファイルを取得
-'    MyFile = Dir(MyFolder & "*.*", vbDirectory)
-'    Debug.Print MyFile
-    If (GetAttr(MyFolder & MyFile) And vbDirectory) = vbDirectory Then
-        MyFile = Dir(MyFolder & MyFile & "\", vbDirectory)
-    Else
-        MyFile = Dir(MyFolder & MyFile, vbDirectory)
-    End If
-    
-    ' フォルダ内の全てのファイルを1つずつ処理
-    Do While Len(MyFile) > 0
-        
-        ' ディレクトリの場合
-        If (GetAttr(MyFolder & MyFile) And vbDirectory) = vbDirectory Then
-            
-            ' サブフォルダを処理
-            If MyFile <> "." And MyFile <> ".." Then
-                GetFilesInfoRecursive MyFolder & MyFile, MySheet
-            End If
-            
-        ' ファイルの場合
-        Else
-            
-            ' 拡張子が ".pdf" でない場合
-            MyExtension = Right(MyFile, 4)
-            If MyExtension = ".pdf" Then
-                
-                ' ピリオドでファイル名を分割
-                MySplit = Split(MyFile, ".")
-                
-                ' 表に情報を出力
-                MyRow = MySheet.Cells(Rows.Count, 1).End(xlUp).Row + 1
-                MySheet.Cells(MyRow, 1) = MyRow - 1
-                MySheet.Cells(MyRow, 2) = MySplit(0)
-                MySheet.Cells(MyRow, 3) = MySplit(1)
-                MySheet.Cells(MyRow, 4) = MySplit(2)
-                MySheet.Cells(MyRow, 5) = MySplit(3)
-                
-            End If
-            
-        End If
-        
-        ' 次のファイルを取得
-        MyFile = Dir()
-
-Loop
-
-' 終了処理
-Set MySheet = Nothing
-MsgBox "処理が完了しました。"
-
-End Sub
-
-Sub GetFilesInfoRecursive(ByVal MyFolder As String, ByRef MySheet As Worksheet)
-Dim MyFile As String
-Dim MyExtension As String
-Dim MySplit As Variant
-Dim MyRow As Long
-
-' フォルダ内の全てのファイルを取得
-MyFile = Dir(MyFolder & "*.*", vbDirectory)
-
-' フォルダ内の全てのファイルを1つずつ処理
-Do While MyFile <> ""
-    
-    ' ディレクトリの場合
-    If (GetAttr(MyFolder) And vbDirectory) = vbDirectory Then
-        
-         'サブフォルダを処理
-        If MyFile <> "." And MyFile <> ".." Then
-            GetFilesInfoRecursive MyFolder & MyFile & "\", MySheet
-        End If
-
-    ' ファイルの場合
-    ElseIf Len(MyFile) > 0 Then
-        
-        ' 拡張子が ".pdf" でない場合
-        MyExtension = Right(MyFile, 4)
-        If MyExtension = ".pdf" Then
-            
-            ' ピリオドでファイル名を分割
-            MySplit = Split(MyFile, ".")
-            
-            ' 表に情報を出力
-            MyRow = MySheet.Cells(Rows.Count, 1).End(xlUp).Row + 1
-            MySheet.Cells(MyRow, 1) = MyRow - 1
-            MySheet.Cells(MyRow, 2) = MySplit(0)
-            MySheet.Cells(MyRow, 3) = MySplit(1)
-            MySheet.Cells(MyRow, 4) = MySplit(2)
-            MySheet.Cells(MyRow, 5) = MySplit(3)
-            
-        End If
-        
-    End If
-    
-    ' 次のファイルを取得
-    MyFile = Dir()
-    
-Loop
 
 End Sub
