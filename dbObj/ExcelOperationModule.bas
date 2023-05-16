@@ -52,6 +52,11 @@ Function load_excel_sheet(excel_path As String) As Variant
     merge_data = merge_array(data1, data2)
     
     obj_workbook.Close SaveChanges:=False
+    obj_excel.Quit
+    
+    Set excel_sheet = Nothing
+    Set obj_workbook = Nothing
+    Set obj_excel = Nothing
     
     load_excel_sheet = merge_data
 
@@ -69,9 +74,9 @@ Function get_last_row(ByVal sht As Object, inspect_row As Long) As Long
 
 End Function
 
-Function fnc処理記録データ読み込み(excel_path As String, date_range As Variant) As Variant
+Function fnc処理記録データ配列取得(excel_path As String, date_range As Variant) As Variant
 '----------------------------------------------------------------------------------------------
-' 処理記録のExcelファイルから、date_rangeで指定した日付けのシートのみ配列に格納する。
+' 処理記録のExcelファイルから、date_range配列で指定した日付けのシートのみ配列に格納する。
 '----------------------------------------------------------------------------------------------
     Dim xlApp As Object
     Set xlApp = CreateObject("Excel.Application")
@@ -102,7 +107,7 @@ Function fnc処理記録データ読み込み(excel_path As String, date_range As Variant) 
 
     '指定した日付けのシートが一つも存在しない場合。
     If SheetCount = 0 Then
-        fnc処理記録データ読み込み = False
+        fnc処理記録データ配列取得 = False
         Exit Function
     End If
     
@@ -113,15 +118,21 @@ Function fnc処理記録データ読み込み(excel_path As String, date_range As Variant) 
         '1つ目のシートを読み込む
         If i = 1 Then
             Dim ResultData As Variant
-            ResultData = fnc配列読み込み(xlBook.Worksheets(SheetNames(i)), CStr(SheetNames(i)))
+            ResultData = fnc配列変換(xlBook.Worksheets(SheetNames(i)), CStr(SheetNames(i)))
+            '左側に日付けの列を追加
+            ResultData = addDateToLeft(ResultData, CDate(Replace(SheetNames(i), ".", "/")))
         End If
         '2つ目のシートからは前に読み込んだシートに結合する。
         If i <> 1 Then
             Dim data As Variant
-            data = fnc配列読み込み(xlBook.Worksheets(SheetNames(i)), CStr(SheetNames(i)))
+            data = fnc配列変換(xlBook.Worksheets(SheetNames(i)), CStr(SheetNames(i)))
+            '左側に日付けの列を追加
+            data = addDateToLeft(data, CDate(Replace(SheetNames(i), ".", "/")))
             ResultData = merge_array(ResultData, data)
         End If
     Next i
+ 
+'    Call PrintArray(ResultData)
  
     xlBook.Close False
     xlApp.Quit
@@ -130,25 +141,27 @@ Function fnc処理記録データ読み込み(excel_path As String, date_range As Variant) 
     Set xlBook = Nothing
     Set xlApp = Nothing
     
-    fnc処理記録データ読み込み = ResultData
+    fnc処理記録データ配列取得 = ResultData
 
 End Function
 
-Function fnc配列読み込み(sheet As Object, sheetname As String) As Variant
+Function fnc配列変換(sheet As Object, sheetname As String) As Variant
 '----------------------------------------------------------------------
 '処理記録ワークシートの指定したシートの内容を配列に格納して返す。
 '-----------------------------------------------------------------------
     Dim lastRow As Long
     '内容器番号の列の最終行を調べる。
-    lastRow = get_last_row(sheet, 12)
+    Const cstバケツ番号 As Long = 12
+    lastRow = get_last_row(sheet, cstバケツ番号)
     
     With sheet
         .Name = sheetname
         Dim data As Variant
-        data = .Range(.Cells(23, 2), .Cells(lastRow, 14)).Value
+        Const cst処理記録の外容器番号 As Long = 14
+        data = .Range(.Cells(23, 2), .Cells(lastRow, cst処理記録の外容器番号)).Value
     End With
     
-    fnc配列読み込み = data
+    fnc配列変換 = data
 
 End Function
 

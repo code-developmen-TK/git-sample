@@ -340,3 +340,46 @@ Function search_array(data_array As Variant, search_column As Long, search_value
     search_array = False
     
 End Function
+
+Function addDateToLeft(arr As Variant, dateValue As Date) As Variant
+'-----------------------------------------------------------------------------------
+'配列と日付けを引数として受け取り、配列の一番左側に日付けを追加した新しい配列を返す。
+'-----------------------------------------------------------------------------------
+    Dim numRows As Integer, numCols As Integer
+    Dim i As Integer, j As Integer
+    Dim newArr As Variant
+    
+    numRows = UBound(arr, 1)
+    numCols = UBound(arr, 2)
+    
+    ' Resize the new array to include the additional column
+    ReDim newArr(1 To numRows, 1 To numCols + 1)
+    
+    ' Add the date to the first column of the new array
+    For i = 1 To numRows
+        newArr(i, 1) = dateValue
+    Next i
+    
+    ' Copy the existing data to the remaining columns of the new array
+    For i = 1 To numRows
+        For j = 2 To numCols + 1
+            newArr(i, j) = arr(i, j - 1)
+        Next j
+    Next i
+    
+    addDateToLeft = newArr
+End Function
+
+
+Sub PrintArray(arr As Variant)
+'----------------------------------------------------
+'引数の配列の内容をイミディエイトウィンドウに表示する
+'----------------------------------------------------
+    Dim i As Integer, j As Integer
+    For i = LBound(arr, 1) To UBound(arr, 1)
+        For j = LBound(arr, 2) To UBound(arr, 2)
+            Debug.Print arr(i, j);
+        Next j
+        Debug.Print vbNewLine
+    Next i
+End Sub

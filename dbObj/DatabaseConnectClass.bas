@@ -118,7 +118,7 @@ Public Function Exec(strSQL As String) As Long
 
     Dim ARecNum As Long
     
-    adoCn.execute strSQL, ARecNum
+    adoCn.Execute strSQL, ARecNum
     
     Exec = ARecNum
 

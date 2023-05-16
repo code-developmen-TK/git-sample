@@ -455,7 +455,7 @@ Sub AddColumnToTable()
     End With
     
     'Execute SQL statement
-    cmd.execute
+    cmd.Execute
     
     'Clean up ADO objects
     Set cmd = Nothing
@@ -621,7 +621,7 @@ Function update_acceptance_information_data() As Boolean
     strSQL = strSQL & "T1.‚õ—¿ = T2.‚õ—¿ " & vbNewLine
     strSQL = strSQL & "WHERE (T1.“à—eŠí”Ô† = T2.“à—eŠí”Ô†);"
     
-    Debug.Print strSQL
+'    Debug.Print strSQL
     
     DBClass.connection.BeginTrans
 

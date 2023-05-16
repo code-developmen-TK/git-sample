@@ -34,11 +34,18 @@ Public Const adUnsignedTinyInt As Integer = 17 'バイト型（符号なし）
 Public Const adSmallInt As Integer = 2         '整数型（符号付き）
 Public Const adInteger As Integer = 3          '長整数型（符号付き）
 Public Const adCurrency As Integer = 6         '通貨型（符号付き）
-Public Const adSingle As Integer = 4           ' 単精度浮動小数点型
+Public Const adSingle As Integer = 4           '単精度浮動小数点型
 Public Const adDouble As Integer = 5           '倍精度浮動小数点型
 Public Const adDate As Integer = 7             '日付/時刻型
 Public Const adWChar As Integer = 130          '文字列型
 Public Const adLongVarBinary As Integer = 205  'ロングバイナリ型
+
+'ADOレコードセットの状態を表す定数
+Public Const adStateClosed As Integer = 0     'オブジェクトは閉じていることを示す。
+Public Const adStateOpen As Integer = 1       'オブジェクトは開いていることを示す。
+Public Const adStateConnecting As Integer = 2 'オブジェクトは接続していることを示す。
+Public Const adStateExecuting As Integer = 4  'オブジェクトはコマンドを実行していることを示す。
+Public Const adStateFetching As Integer = 8   'オブジェクトの行が取得されていることを示す。
 
 'Officeオブジェクト ファイル・フォルダ選択ダイアログで使う定数
 Public Const msoFileDialogFilePicker As Integer = 3 'ファイルを選択する場合
@@ -95,7 +102,7 @@ Public Const SPRIT_ROW As Long = 21                            '読み込むデータの
 'Public Const BLACK2 As Long = 28                                '読み込むデータの入っているシートの量の入っている列
 
 
-Public Const DEFAULT_FOLDER As String = "D:\VBA開発\excel\履歴管理データ" '最初に開くフォルダを指定
+Public Const DEFAULT_FOLDER As String = "D:\プログラム等開発\excel\履歴管理データ" '最初に開くフォルダを指定
 'Public Const PROCESSING_DATE As Long = 32 '処理日の入った列
 'Public Const TREATMENT_DATE_COLUMN As Long = 32 '処理日の入った列
  
@@ -132,7 +139,7 @@ Public Const cst処理可 As String = 29
 Public Const cstブランク As String = 30
 Public Const cst保留 As String = 31
 Public Const cst処理日 As String = 32
-Public Const cst処理物バッジ番号 As String = 33
+Public Const cst処理物バッチ番号 As String = 33
 Public Const cst備考 As String = 34
 Public Const cst分割後の内容器番号位置 = 1
 

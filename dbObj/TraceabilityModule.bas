@@ -28,8 +28,12 @@ Sub sub履歴管理データ()
     
     Call sub処理データ追加
     
+    Call sub処理日対応データ追加
+    
+    
+    
 End Sub
-Sub sub処理データ()
+Sub sub処理記録テーブルデータ追加()
     Dim file_path As String
     file_path = file_selection_dialog(DEFAULT_FOLDER, "Excel", False)
 
@@ -42,13 +46,18 @@ Sub sub処理データ()
 '    date_range = Array(#2/8/2023#)
     
     Dim treatmaent_data As Variant
-    treatmaent_data = fnc処理記録データ読み込み(file_path, date_range)
+    treatmaent_data = fnc処理記録データ配列取得(file_path, date_range)
     
-    If treatmaent_data = False Then
+    If Not IsArray(treatmaent_data) Then
         MsgBox ("指定された日付けのシートが存在しません。")
         Exit Sub
     End If
     
+    Call sub処理記録データ読み込み用テーブル作成
+    
+    Call sub処理記録データ読み込み(treatmaent_data)
+
+    Call sub処理記録データ追加
 
 End Sub
 Function load_histry_data(file_path As String) As Variant
@@ -101,16 +110,19 @@ Sub sub履歴管理データ読み込み用テーブル作成()
     Set DBClass = New DatabaseConnectClass
     DBClass.DBConnect
     
-    If table_exists("TMP_履歴管理データ読み込み用テーブル", DBClass.connection) Then
+    Dim temp_table_name As String
+    temp_table_name = "TMP_履歴管理データ読み込み用テーブル"
+    
+    If table_exists(temp_table_name, DBClass.connection) Then
     
         Dim strSQL As String
-        strSQL = "DROP TABLE TMP_履歴管理データ読み込み用テーブル"
+        strSQL = "DROP TABLE " & temp_table_name
         DBClass.Exec (strSQL)
 
     End If
 
-    strSQL = ""
-    strSQL = strSQL & "CREATE TABLE TMP_履歴管理データ読み込み用テーブル (" & vbNewLine
+    strSQL = "" 'クリア
+    strSQL = strSQL & "CREATE TABLE " & temp_table_name & " (" & vbNewLine
     strSQL = strSQL & "缶数 LONG," & vbNewLine
     strSQL = strSQL & "記号 TEXT(255)," & vbNewLine
     strSQL = strSQL & "番号 LONG," & vbNewLine
@@ -136,14 +148,14 @@ Sub sub履歴管理データ読み込み用テーブル作成()
     strSQL = strSQL & "重量2  DOUBLE," & vbNewLine
     strSQL = strSQL & "内容物2 TEXT(255)," & vbNewLine
     strSQL = strSQL & "染料2 DOUBLE," & vbNewLine
-    strSQL = strSQL & "オレンジ2 DOUBLE," & vbNewLine
-    strSQL = strSQL & "ミドリ2 DOUBLE," & vbNewLine
-    strSQL = strSQL & "クロ2 DOUBLE," & vbNewLine
+    strSQL = strSQL & "オレンジ2 LONG," & vbNewLine
+    strSQL = strSQL & "ミドリ2 LONG," & vbNewLine
+    strSQL = strSQL & "クロ2 LONG," & vbNewLine
     strSQL = strSQL & "処理可 TEXT(255)," & vbNewLine
     strSQL = strSQL & "ブランク TEXT(255)," & vbNewLine
     strSQL = strSQL & "保留 TEXT(255)," & vbNewLine
     strSQL = strSQL & "処理日 DATE," & vbNewLine
-    strSQL = strSQL & "処理物バッジ番号 TEXT(255)," & vbNewLine
+    strSQL = strSQL & "処理物バッチ番号 TEXT(255)," & vbNewLine
     strSQL = strSQL & "備考 TEXT(255)" & vbNewLine
     strSQL = strSQL & ")"
     
@@ -256,7 +268,7 @@ Sub sub履歴管理データ読み込み(histry_data As Variant)
                 dbcRs("処理日").Value = IIf(histry_data(i, cst処理日) = 0, _
                                         Null, _
                                         histry_data(i, cst処理日))
-               dbcRs("処理物バッジ番号").Value = histry_data(i, cst処理物バッジ番号)
+               dbcRs("処理物バッチ番号").Value = histry_data(i, cst処理物バッチ番号)
                dbcRs("備考").Value = histry_data(i, cst備考)
             dbcRs.Update
     Next i
@@ -398,7 +410,7 @@ Sub sub受入物容器対応データ追加()
     strSQL = strSQL & "              T1.内容器番号1 = T2.内容器番号" & vbNewLine
     strSQL = strSQL & "             );"
 
-    Debug.Print strSQL
+'    Debug.Print strSQL
     
     On Error GoTo ErrHndl
 
@@ -450,7 +462,7 @@ Sub sub受入物情報データ更新()
     strSQL = strSQL & "WHERE" & vbNewLine
     strSQL = strSQL & " T1.内容器番号 = T2.内容器番号1;" & vbNewLine
     
-    Debug.Print strSQL
+'    Debug.Print strSQL
     
     On Error GoTo ErrHndl
 
@@ -525,7 +537,7 @@ Sub sub受入物情報データ追加()
     strSQL = strSQL & "              T1.内容器番号1 = T2.内容器番号" & vbNewLine
     strSQL = strSQL & "             );"
 '
-    Debug.Print strSQL
+'    Debug.Print strSQL
 
     On Error GoTo ErrHndl
 
@@ -600,7 +612,7 @@ Sub sub処理データ追加()
     strSQL = strSQL & "              T1.内容器番号2 & T1.分割 = T2.バケツ番号" & vbNewLine
     strSQL = strSQL & "             );"
 
-    Debug.Print strSQL
+'    Debug.Print strSQL
 
     On Error GoTo ErrHndl
 
@@ -614,6 +626,7 @@ Sub sub処理データ追加()
     MsgBox Format(RecCount, "#") & "件のデータを追加しました。"
 
     Set DBClass = Nothing
+    
 Exit Sub
 
 ErrHndl:
@@ -622,3 +635,429 @@ ErrHndl:
             Err.Description, vbCritical
     Set DBClass = Nothing
 End Sub
+
+Sub sub処理日対応データ追加()
+    Dim DBClass As New DatabaseConnectClass
+    DBClass.DBConnect
+    
+    Dim strSQL As String
+    strSQL = strSQL & "INSERT INTO" & vbNewLine
+    strSQL = strSQL & " T_処理日対応 (" & vbNewLine
+    strSQL = strSQL & " 処理物バッチ番号," & vbNewLine
+    strSQL = strSQL & " 処理日," & vbNewLine
+    strSQL = strSQL & " 取出日)" & vbNewLine
+    strSQL = strSQL & "SELECT DISTINCT" & vbNewLine
+    strSQL = strSQL & " T1.処理物バッチ番号," & vbNewLine
+    strSQL = strSQL & " T1.処理日," & vbNewLine
+    strSQL = strSQL & " DateAdd('d',1,T1.処理日) AS 取出日" & vbNewLine
+    strSQL = strSQL & "FROM " & vbNewLine
+    strSQL = strSQL & " TMP_履歴管理データ読み込み用テーブル AS T1" & vbNewLine
+    strSQL = strSQL & "LEFT JOIN " & vbNewLine
+    strSQL = strSQL & " T_処理日対応 AS T2" & vbNewLine
+    strSQL = strSQL & "ON" & vbNewLine
+    strSQL = strSQL & " T1.処理物バッチ番号 = T2.処理物バッチ番号" & vbNewLine
+    strSQL = strSQL & "WHERE" & vbNewLine
+    strSQL = strSQL & " Not (T1.処理物バッチ番号='')" & vbNewLine
+    strSQL = strSQL & "AND" & vbNewLine
+    strSQL = strSQL & " NOT EXISTS (SELECT" & vbNewLine
+    strSQL = strSQL & "              *" & vbNewLine
+    strSQL = strSQL & "             FROM" & vbNewLine
+    strSQL = strSQL & "              T_処理日対応 AS T2" & vbNewLine
+    strSQL = strSQL & "             WHERE" & vbNewLine
+    strSQL = strSQL & "              T1.処理物バッチ番号 = T2.処理物バッチ番号" & vbNewLine
+    strSQL = strSQL & "             );"
+    
+'    Debug.Print strSQL
+    
+    On Error GoTo ErrHndl
+
+    DBClass.BeginTrans
+
+        Dim RecCount As Long
+        RecCount = DBClass.Exec(strSQL)
+
+    DBClass.CommitTrans
+
+    MsgBox Format(RecCount, "#") & "件のデータを追加しました。"
+
+    Set DBClass = Nothing
+
+Exit Sub
+
+ErrHndl:
+    DBClass.RollbackTrans
+    MsgBox "以下のエラーが発生したためロールバックしました。" & vbCrLf & _
+            Err.Description, vbCritical
+    Set DBClass = Nothing
+    
+End Sub
+
+Sub sub処理記録データ読み込み用テーブル作成(DBClass As DatabaseConnectClass)
+'------------------------------------------------------------------------------
+'一時保管用のTMP_処理記録データ読み込み用テーブルを作成
+'--------------------------------------------------------------------------------
+'    Dim DBClass As DatabaseConnectClass
+'    Set DBClass = New DatabaseConnectClass
+'    DBClass.DBConnect
+    
+    Dim temp_table_name As String
+    temp_table_name = "TMP_処理記録データ読み込み用テーブル"
+
+    If table_exists(temp_table_name, DBClass.connection) Then
+    
+        Dim strSQL As String
+        strSQL = "DROP TABLE " & temp_table_name
+        DBClass.Exec (strSQL)
+
+    End If
+
+    strSQL = "" 'クリア
+    strSQL = strSQL & "CREATE TABLE " & temp_table_name & " (" & vbNewLine
+    strSQL = strSQL & "処理日 DATE," & vbNewLine
+    strSQL = strSQL & "投入時刻 DATE," & vbNewLine
+    strSQL = strSQL & "重量 DOUBLE," & vbNewLine
+    strSQL = strSQL & "種類1 DOUBLE," & vbNewLine
+    strSQL = strSQL & "種類2 DOUBLE," & vbNewLine
+    strSQL = strSQL & "種類3 DOUBLE," & vbNewLine
+    strSQL = strSQL & "種類4 DOUBLE," & vbNewLine
+    strSQL = strSQL & "種類5 DOUBLE," & vbNewLine
+    strSQL = strSQL & "内容物 TEXT(255)," & vbNewLine
+    strSQL = strSQL & "オレンジ LONG," & vbNewLine
+    strSQL = strSQL & "ミドリ LONG," & vbNewLine
+    strSQL = strSQL & "バケツ番号 TEXT(255)," & vbNewLine
+    strSQL = strSQL & "染料 DOUBLE," & vbNewLine
+    strSQL = strSQL & "外容器番号 TEXT(255)" & vbNewLine
+    strSQL = strSQL & ")"
+    
+'    Debug.Print strSQL
+
+
+    On Error GoTo ErrHndl
+
+    DBClass.BeginTrans
+
+         DBClass.Exec (strSQL)
+
+    DBClass.CommitTrans
+
+'    Set DBClass = Nothing
+
+Exit Sub
+
+ErrHndl:
+    DBClass.RollbackTrans
+    MsgBox "以下のエラーが発生したためロールバックしました。" & vbCrLf & _
+            Err.Description, vbCritical
+'    Set DBClass = Nothing
+ 
+End Sub
+
+Sub sub処理記録データ読み込み用テーブルクリア(DBClass As DatabaseConnectClass)
+    Dim strSQL As String
+    strSQL = strSQL & "DELETE * " & vbNewLine
+    strSQL = strSQL & "FROM TMP_処理記録データ読み込み用テーブル;"
+    
+    On Error GoTo ErrHndl
+
+    DBClass.BeginTrans
+
+        Dim RecCount As Long
+        RecCount = DBClass.Exec(strSQL)
+
+    DBClass.CommitTrans
+
+Exit Sub
+
+ErrHndl:
+    DBClass.RollbackTrans
+    MsgBox "以下のエラーが発生したためロールバックしました。" & vbCrLf & _
+            Err.Description, vbCritical
+
+End Sub
+
+Sub sub処理記録データ読み込み(treatmaent_data As Variant, DBClass As DatabaseConnectClass)
+'------------------------------------------------------------------------------
+'一時保管用ののTMP_処理記録データ読み込み用テーブルに処理記録データを読み込む
+'--------------------------------------------------------------------------------
+'    Dim DBClass As DatabaseConnectClass
+'    Set DBClass = New DatabaseConnectClass
+'    DBClass.DBConnect
+        
+    Dim strSQL As String
+    strSQL = strSQL & "SELECT * " & vbNewLine
+    strSQL = strSQL & "FROM TMP_処理記録データ読み込み用テーブル"
+    
+    Dim dbcRs As Object
+    Set dbcRs = DBClass.Run(strSQL)
+    
+    On Error GoTo ErrHndl
+    
+    DBClass.BeginTrans
+
+        Dim i As Integer
+        For i = 1 To UBound(treatmaent_data, 1)
+            dbcRs.AddNew
+                dbcRs("処理日").Value = treatmaent_data(i, 1)
+                dbcRs("投入時刻").Value = treatmaent_data(i, 2)
+                dbcRs("重量").Value = treatmaent_data(i, 3)
+                dbcRs("種類1").Value = IIf(treatmaent_data(i, 4) = 0, _
+                                        Null, _
+                                        treatmaent_data(i, 4))
+                dbcRs("種類2").Value = IIf(treatmaent_data(i, 5) = 0, _
+                                        Null, _
+                                        treatmaent_data(i, 5))
+                dbcRs("種類3").Value = IIf(treatmaent_data(i, 6) = 0, _
+                                        Null, _
+                                        treatmaent_data(i, 6))
+                dbcRs("種類4").Value = IIf(treatmaent_data(i, 7) = 0, _
+                                        Null, _
+                                        treatmaent_data(i, 7))
+                dbcRs("種類5").Value = IIf(treatmaent_data(i, 8) = 0, _
+                                        Null, _
+                                        treatmaent_data(i, 8))
+                dbcRs("内容物").Value = treatmaent_data(i, 9)
+                dbcRs("オレンジ").Value = IIf(treatmaent_data(i, 10) = 0, _
+                                        Null, _
+                                        treatmaent_data(i, 10))
+                dbcRs("ミドリ").Value = IIf(treatmaent_data(i, 11) = 0, _
+                                        Null, _
+                                        treatmaent_data(i, 11))
+                dbcRs("バケツ番号").Value = treatmaent_data(i, 12)
+                dbcRs("染料").Value = IIf(treatmaent_data(i, 13) = 0, _
+                                        Null, _
+                                        treatmaent_data(i, 13))
+               dbcRs("外容器番号").Value = treatmaent_data(i, 14)
+            dbcRs.Update
+    Next i
+
+    DBClass.CommitTrans
+    
+'    Set DBClass = Nothing
+    
+Exit Sub
+
+ErrHndl:
+    DBClass.RollbackTrans
+    MsgBox "以下のエラーが発生したためロールバックしました。" & vbCrLf & _
+            Err.Description, vbCritical
+
+'    Set DBClass = Nothing
+
+
+End Sub
+
+
+Sub sub処理記録データ追加(DBClass As DatabaseConnectClass)
+'    Dim DBClass As New DatabaseConnectClass
+'    DBClass.DBConnect
+    
+    Dim strSQL As String
+    strSQL = strSQL & "INSERT INTO" & vbNewLine
+    strSQL = strSQL & " T_処理記録 (" & vbNewLine
+    strSQL = strSQL & " 処理日," & vbNewLine
+    strSQL = strSQL & " 投入時刻," & vbNewLine
+    strSQL = strSQL & " 重量," & vbNewLine
+    strSQL = strSQL & " 種類1," & vbNewLine
+    strSQL = strSQL & " 種類2," & vbNewLine
+    strSQL = strSQL & " 種類3," & vbNewLine
+    strSQL = strSQL & " 種類4," & vbNewLine
+    strSQL = strSQL & " 種類5," & vbNewLine
+    strSQL = strSQL & " 内容物," & vbNewLine
+    strSQL = strSQL & " オレンジ," & vbNewLine
+    strSQL = strSQL & " ミドリ," & vbNewLine
+    strSQL = strSQL & " バケツ番号," & vbNewLine
+    strSQL = strSQL & " 染料," & vbNewLine
+    strSQL = strSQL & " 外容器番号)" & vbNewLine
+    strSQL = strSQL & "SELECT DISTINCT" & vbNewLine
+    strSQL = strSQL & " T1.処理日," & vbNewLine
+    strSQL = strSQL & " T1.投入時刻," & vbNewLine
+    strSQL = strSQL & " T1.重量," & vbNewLine
+    strSQL = strSQL & " T1.種類1," & vbNewLine
+    strSQL = strSQL & " T1.種類2," & vbNewLine
+    strSQL = strSQL & " T1.種類3," & vbNewLine
+    strSQL = strSQL & " T1.種類4," & vbNewLine
+    strSQL = strSQL & " T1.種類5," & vbNewLine
+    strSQL = strSQL & " T1.内容物," & vbNewLine
+    strSQL = strSQL & " T1.オレンジ," & vbNewLine
+    strSQL = strSQL & " T1.ミドリ," & vbNewLine
+    strSQL = strSQL & " T1.バケツ番号," & vbNewLine
+    strSQL = strSQL & " T1.染料," & vbNewLine
+    strSQL = strSQL & " T1.外容器番号" & vbNewLine
+    strSQL = strSQL & "FROM " & vbNewLine
+    strSQL = strSQL & " TMP_処理記録データ読み込み用テーブル AS T1" & vbNewLine
+'    strSQL = strSQL & "LEFT JOIN " & vbNewLine
+'    strSQL = strSQL & "  T_処理記録 AS T2" & vbNewLine
+'    strSQL = strSQL & "ON" & vbNewLine
+'    strSQL = strSQL & " T1.バケツ番号 = T2.バケツ番号" & vbNewLine
+    strSQL = strSQL & "WHERE" & vbNewLine
+'    strSQL = strSQL & " Not (T1.バケツ番号='')" & vbNewLine
+'    strSQL = strSQL & "AND" & vbNewLine
+    strSQL = strSQL & " NOT EXISTS (SELECT" & vbNewLine
+    strSQL = strSQL & "              *" & vbNewLine
+    strSQL = strSQL & "             FROM" & vbNewLine
+    strSQL = strSQL & "              T_処理記録 AS T2" & vbNewLine
+    strSQL = strSQL & "             WHERE" & vbNewLine
+    strSQL = strSQL & "              T1.バケツ番号 = T2.バケツ番号" & vbNewLine
+    strSQL = strSQL & "             )" & vbNewLine
+    strSQL = strSQL & "ORDER BY" & vbNewLine
+    strSQL = strSQL & " T1.処理日," & vbNewLine
+    strSQL = strSQL & " T1.投入時刻;"
+
+    
+'    Debug.Print strSQL
+    
+    On Error GoTo ErrHndl
+
+    DBClass.BeginTrans
+
+        Dim RecCount As Long
+        RecCount = DBClass.Exec(strSQL)
+
+    DBClass.CommitTrans
+
+    MsgBox Format(RecCount, "#") & "件のデータを追加しました。"
+
+'    Set DBClass = Nothing
+
+Exit Sub
+
+ErrHndl:
+    DBClass.RollbackTrans
+    MsgBox "以下のエラーが発生したためロールバックしました。" & vbCrLf & _
+            Err.Description, vbCritical
+'    Set DBClass = Nothing
+    
+End Sub
+
+'Sub subリストボックス値設定()
+'Private Sub Form_Load()
+'    Dim conn As ADODB.connection
+'    Dim rs As ADODB.Recordset
+'
+'    ' 接続文字列の設定 '
+'    Set conn = New ADODB.connection
+'    conn.ConnectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=C:\example.mdb"
+'    conn.Open
+'
+'    ' レコードセットの取得 '
+'    Set rs = New ADODB.Recordset
+'    rs.Open "SELECT * FROM exampleTable", conn
+'
+'    ' リストボックスにセット '
+'    With ListBox1
+'        .Clear ' リストボックスの初期化 '
+'        Do While Not rs.EOF ' レコードセットを順番に処理 '
+'            .AddItem rs.Fields("FieldName1") & vbTab & rs.Fields("FieldName2") ' リストボックスにアイテムを追加 '
+'            rs.MoveNext ' 次のレコードへ移動 '
+'        Loop
+'    End With
+'
+'    ' レコードセットと接続の解除 '
+'    rs.Close
+'    Set rs = Nothing
+'    conn.Close
+'    Set conn = Nothing
+'End Sub
+
+Sub subリストボックス間コピー()
+'Private Sub btnCopy_Click()
+
+    ' コピー元リストボックスの選択項目を取得 '
+    Dim i As Long
+    Dim selectedItems() As String
+    For i = 0 To lstSource.ListCount - 1
+        If lstSource.Selected(i) Then
+            ReDim Preserve selectedItems(UBound(selectedItems) + 1)
+            selectedItems(UBound(selectedItems)) = lstSource.ItemData(i)
+        End If
+    Next i
+    
+    ' コピー先リストボックスに項目を追加 '
+    For i = LBound(selectedItems) To UBound(selectedItems)
+        lstDestination.AddItem selectedItems(i)
+    Next i
+    
+
+End Sub
+'
+'Sub ClearListBox(lstSource As ListBox)
+''引数で渡されたリストボックスの選択状態をクリアする。
+''リストボックスの選択状態を解除
+''    lstSource.MultiSelect = False
+'    lstSource.MultiSelect = True
+'    Dim i As Long
+'    For i = 0 To lstSource.ListCount - 1
+'        lstSource.Selected(i) = False
+'    Next i
+'
+'End Sub
+'
+'Sub subリストボックス項目削除()
+''Private Sub btnDelete_Click()
+'
+'    ' 選択された項目を削除 '
+'    Dim i As Long
+'    For i = lstBox.ListCount - 1 To 0 Step -1
+'        If lstBox.Selected(i) Then
+'            lstBox.RemoveItem i
+'        End If
+'    Next i
+'
+'    ' 選択状態を解除 '
+'    lstBox.MultiSelect = False
+'    lstBox.MultiSelect = True
+'
+'End Sub
+'
+''Sub test()
+''
+''    Dim dbcRs As Object
+''    Set dbcRs = fnc処理日検索()
+''
+''
+''
+'End Sub
+
+Function fnc処理日検索(DBClass As DatabaseConnectClass) As Object
+'    Dim DBClass As New DatabaseConnectClass
+'    DBClass.DBConnect
+'
+    Dim strSQL As String
+    strSQL = strSQL & "SELECT DISTINCT T1.処理日" & vbNewLine
+    strSQL = strSQL & "FROM T_処理 AS T1" & vbNewLine
+    strSQL = strSQL & "WHERE (((T1.処理日) Is Not Null))" & vbNewLine
+    strSQL = strSQL & "AND" & vbNewLine
+    strSQL = strSQL & "NOT EXISTS (SELECT" & vbNewLine
+    strSQL = strSQL & "              *" & vbNewLine
+    strSQL = strSQL & "             FROM" & vbNewLine
+    strSQL = strSQL & "              T_処理記録 AS T2" & vbNewLine
+    strSQL = strSQL & "             WHERE" & vbNewLine
+    strSQL = strSQL & "              T1.処理日 = T2.処理日" & vbNewLine
+    strSQL = strSQL & "             )" & vbNewLine
+    strSQL = strSQL & "ORDER BY T1.処理日;" & vbNewLine
+
+'    Debug.Print strSQL
+   
+'        On Error GoTo ErrHndl
+
+        DBClass.BeginTrans
+
+           Dim dbcRs As Object
+           Set dbcRs = DBClass.Run(strSQL)
+
+        DBClass.CommitTrans
+
+        Set fnc処理日検索 = dbcRs
+         
+'        Set DBClass = Nothing
+
+    Exit Function
+
+ErrHndl:
+    DBClass.RollbackTrans
+    MsgBox "以下のエラーが発生したためロールバックしました。" & vbCrLf & _
+            Err.Description, vbCritical
+'    Set DBClass = Nothing
+
+
+End Function

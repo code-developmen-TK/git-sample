@@ -39,7 +39,7 @@ Function file_selection_dialog(initial_folder As String, file_type As String, mu
         
         If file_selected = -1 Then  'ファイルが選択されれば　-1 を返します。
             Dim select_files As Variant
-            For Each select_files In .SelectedItems
+            For Each select_files In .selectedItems
                  file_selection_dialog = select_files
             Next
         ElseIf file_selected = 0 Then
@@ -226,5 +226,65 @@ ErrHandler:
     Set DBClass = Nothing
     
     delete_table = False
+    
+End Function
+
+Sub CreateNewTable(tableName As String, columnDefs As Variant)
+'----------------------------------------------------------------
+'渡されたテーブル名と列の定義をもとに、新しいテーブルを作成する
+'Dim columnDefs As Variant
+'columnDefs = Array(Array("Name", "VARCHAR(50)"), Array("Age", "INT"))
+'CreateNewTable "MyTable", columnDefs
+'------------------------------------------------------------------
+    Dim conn As New ADODB.connection
+    Dim cmd As New ADODB.Command
+    Dim col As Variant
+    Dim sql As String
+    
+    ' Open a connection to the current database
+    conn.Open CurrentProject.connection
+    
+    ' Build the SQL statement to create the new table
+    sql = "CREATE TABLE " & tableName & " (ID AUTOINCREMENT PRIMARY KEY"
+    For Each col In columnDefs
+        sql = sql & ", [" & col(0) & "] " & col(1)
+    Next
+    sql = sql & ")"
+    
+    ' Set up the ADO command with the SQL statement
+    cmd.ActiveConnection = conn
+    cmd.CommandType = adCmdText
+    cmd.CommandText = sql
+    
+    ' Execute the command to create the new table
+    cmd.Execute
+    
+    ' Clean up the ADO objects
+    Set cmd = Nothing
+    conn.Close
+    Set conn = Nothing
+End Sub
+
+Function GetFiscalYear() As String
+'--------------------------------------------------------
+'現在の日付から西暦で表した年度の下2桁を文字列として返す
+'--------------------------------------------------------
+    Dim thisYear As Integer
+    Dim thisMonth As Integer
+    Dim fiscalYear As Integer
+    
+    ' 現在の日付を取得
+    thisYear = Year(Date)
+    thisMonth = Month(Date)
+    
+    ' 年度の下2桁を計算
+    If thisMonth >= 4 Then
+        fiscalYear = thisYear Mod 100
+    Else
+        fiscalYear = (thisYear - 1) Mod 100
+    End If
+    
+    ' 年度の下2桁を文字列として返す
+    GetFiscalYear = Format(fiscalYear, "00")
     
 End Function

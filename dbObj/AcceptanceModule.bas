@@ -89,7 +89,7 @@ Sub create_temporary_table()
              "Y36 DOUBLE," & _
              "Y38 DOUBLE," & _
              "Y日 DATE)"
-Debug.Print strSQL
+'Debug.Print strSQL
 
      DBClass.Exec (strSQL)
 
@@ -239,7 +239,7 @@ Sub update_data()
     strSQL = strSQL & "T1.更新日 = date()" & vbNewLine
     strSQL = strSQL & "WHERE (T1.外容器番号 = T2.外容器番号);"
 
-Debug.Print strSQL
+'Debug.Print strSQL
 
 '
 'On Error GoTo ErrHndl
